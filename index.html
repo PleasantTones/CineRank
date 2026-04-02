@@ -54,20 +54,20 @@
   .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
   .progress-bar { width: 100%; height: 4px; background: #1e1a10; border-radius: 99px; margin-bottom: 1.5rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.4); }
   .progress-fill { height: 100%; background: #e0e0e0; border-radius: 99px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 8px rgba(200,168,74,0.4); }
-  .matchup-section { display: flex; gap: 1.5rem; align-items: stretch; }
-  .vs-label { display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 700; color: #c8a040; flex-shrink: 0; width: 36px; letter-spacing: 0.06em; text-shadow: 0 0 10px rgba(200,168,74,0.35); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .movie-card { flex: 1; background: #141416; border: 1px solid #3a3010; border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 12px; transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s; cursor: default; }
+  .matchup-section { display: flex; gap: 1rem; align-items: stretch; }
+  .vs-label { display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #c8a040; flex-shrink: 0; width: 40px; letter-spacing: 0.04em; text-shadow: 0 0 16px rgba(200,168,74,0.5); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .movie-card { flex: 1; background: #141416; border: 1px solid #3a3010; border-radius: 16px; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 14px; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s; cursor: default; }
   .movie-card:hover { border-color: #6a5a20; transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 60px rgba(200,168,74,0.06); }
-  .movie-poster { width: 100%; max-width: 160px; aspect-ratio: 2/3; object-fit: cover; border-radius: 10px; background: #1c1c1f; display: block; transition: transform 0.3s ease; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+  .movie-poster { width: 100%; max-width: 200px; aspect-ratio: 2/3; object-fit: cover; border-radius: 12px; background: #1c1c1f; display: block; transition: transform 0.3s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
   .movie-card:hover .movie-poster { transform: scale(1.03); }
   .movie-title { font-size: 14px; font-weight: 600; text-align: center; color: #f0f0f0; line-height: 1.35; letter-spacing: 0.01em; }
   .movie-elo-badge { font-size: 11px; color: #777; letter-spacing: 0.04em; transition: color 0.3s; font-variant-numeric: tabular-nums; }
   .elo-flash { animation: eloFlash 0.6s ease; }
   @keyframes eloFlash { 0%{color:#c8a84a;} 100%{color:#777;} }
   .btn-group { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: auto; }
-  .btn-pick { padding: 12px 14px; border-radius: 10px; border: none; font-size: 14px; cursor: pointer; background: #f5f0e8; color: #111113; font-weight: 700; width: 100%; transition: all 0.18s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.3); letter-spacing: 0.02em; }
-  .btn-pick:hover { background: #ede8d8; box-shadow: 0 2px 8px rgba(0,0,0,0.3); transform: translateY(-1px); }
-  .btn-pick:active { transform: translateY(1px) scale(0.98); box-shadow: 0 1px 4px rgba(200,168,74,0.3), inset 0 2px 4px rgba(0,0,0,0.2); }
+  .btn-pick { padding: 14px 14px; border-radius: 10px; border: none; font-size: 14px; cursor: pointer; background: #f5f0e8; color: #111113; font-weight: 700; width: 100%; transition: all 0.15s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.3); letter-spacing: 0.02em; }
+  .btn-pick:hover { background: #ede8d8; box-shadow: 0 4px 16px rgba(0,0,0,0.4); transform: translateY(-2px) scale(1.02); }
+  .btn-pick:active { transform: translateY(2px) scale(0.97); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
   .btn-unseen { padding: 10px 14px; border-radius: 10px; border: 1px solid #3a3a3e; font-size: 13px; cursor: pointer; background: #1e1e24; color: #888; width: 100%; transition: all 0.18s ease; box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04); letter-spacing: 0.02em; }
   .btn-unseen:hover { background: #28282e; color: #aaa; border-color: #4a4a4e; transform: translateY(-1px); }
   .btn-unseen:active { transform: translateY(1px) scale(0.98); box-shadow: 0 1px 4px rgba(0,0,0,0.5), inset 0 2px 4px rgba(0,0,0,0.3); }
@@ -75,7 +75,7 @@
   .skip-btn:hover { color: #888; }
   .skip-btn::after { content: ' →'; }
   .no-player-msg { text-align: center; padding: 3rem 1rem; font-size: 15px; color: #777; }
-  .matchup-wrap { animation: fadeSlide 0.3s ease; }
+  .matchup-wrap { animation: fadeSlide 0.25s ease; }
   @keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .flash-winner { animation: flashGreen 0.4s ease forwards; }
   .flash-loser { animation: flashFade 0.4s ease forwards; }
@@ -133,6 +133,65 @@
   .toggle-seen-btn.active-seen { background: #2d6a4f; color: #d8f3dc; border-color: #2d6a4f; }
   .toggle-seen-btn.active-unseen { background: #6b2737; color: #f4b8c1; border-color: #6b2737; }
   .empty-msg { font-size: 14px; color: #777; padding: 2.5rem 0; text-align: center; }
+  .float-chat-btn { position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: #f5f0e8; color: #111; border: none; font-size: 22px; cursor: pointer; z-index: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+  .float-chat-btn:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(0,0,0,0.6); }
+  .float-chat-online-ring { position: absolute; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; border: 2.5px solid #4ade80; z-index: 499; pointer-events: none; box-shadow: 0 0 8px rgba(74,222,128,0.6); animation: onlinePulse 2.5s ease-in-out infinite; display: none; }
+  @keyframes onlinePulse { 0%,100%{box-shadow:0 0 6px rgba(74,222,128,0.5)} 50%{box-shadow:0 0 14px rgba(74,222,128,0.9)} }
+  .float-chat-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; background: #c8a040; color: #000; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid #0c0c0e; }
+  .float-chat-panel { position: fixed; bottom: 86px; right: 24px; width: 320px; max-height: 460px; background: #141416; border: 1px solid #3a3010; border-radius: 16px; z-index: 500; box-shadow: 0 8px 40px rgba(0,0,0,0.7); display: flex; flex-direction: column; overflow: hidden; animation: slideUpChat 0.2s ease; }
+  @keyframes slideUpChat { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .float-chat-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid #2a2010; }
+  .float-chat-title { font-size: 13px; font-weight: 700; color: #f0f0f0; display: flex; align-items: center; gap: 6px; }
+  .float-chat-online { display: flex; gap: 4px; align-items: center; }
+  .online-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .float-chat-close { background: none; border: none; color: #555; font-size: 18px; cursor: pointer; padding: 0; line-height: 1; }
+  .float-chat-close:hover { color: #f0f0f0; }
+  .float-chat-messages { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; min-height: 200px; max-height: 300px; }
+  .float-chat-input-row { display: flex; gap: 6px; padding: 10px 12px; border-top: 1px solid #2a2010; background: #111113; }
+  .float-chat-input { flex: 1; background: #1a1a1e; border: 1px solid #3a3010; border-radius: 8px; padding: 7px 10px; font-size: 12px; color: #f0f0f0; outline: none; }
+  .float-chat-input:focus { border-color: #6a5a20; }
+  .float-chat-send { padding: 7px 12px; border-radius: 8px; background: #f5f0e8; color: #111; border: none; font-size: 12px; font-weight: 700; cursor: pointer; }
+  .float-chat-send:hover { background: #ede8d8; }
+  @media (max-width: 600px) {
+    .float-chat-panel { width: calc(100vw - 32px); right: 16px; bottom: 80px; }
+    .float-chat-btn { bottom: 16px; right: 16px; width: 48px; height: 48px; font-size: 20px; }
+  }
+  .arcade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 1.5rem; }
+  .arcade-card { background: #141416; border: 1px solid #3a3010; border-radius: 14px; padding: 1.25rem; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 8px; }
+  .arcade-card:hover { border-color: #6a5a20; transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+  .arcade-card-icon { font-size: 32px; }
+  .arcade-card-title { font-size: 16px; font-weight: 700; color: #f0f0f0; }
+  .arcade-card-desc { font-size: 12px; color: #777; line-height: 1.5; }
+  .arcade-score-pill { font-size: 10px; padding: 2px 8px; border-radius: 99px; font-weight: 600; }
+  .arcade-game { background: #141416; border: 1px solid #3a3010; border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; }
+  .arcade-question { font-size: 15px; color: #e0e0e0; line-height: 1.5; margin: 1rem 0; text-align: center; font-weight: 500; }
+  .arcade-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 1rem 0; }
+  .arcade-option { padding: 12px; border-radius: 10px; border: 1px solid #3a3010; background: #1a1a1e; color: #e0e0e0; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .arcade-option:hover { border-color: #6a5a20; background: #222218; transform: translateY(-1px); }
+  .arcade-option.correct { border-color: #4ade80; background: #0a2010; color: #4ade80; }
+  .arcade-option.wrong { border-color: #f87171; background: #200a0a; color: #f87171; }
+  .arcade-option.reveal { border-color: #4ade80; background: #0a2010; color: #4ade80; }
+  .arcade-score-display { text-align: center; font-size: 28px; font-weight: 800; color: #c8a040; margin: 0.5rem 0; }
+  .arcade-score-label { text-align: center; font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.08em; }
+  .arcade-btn { padding: 10px 24px; border-radius: 10px; border: none; background: #f5f0e8; color: #111; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; }
+  .arcade-btn:hover { background: #ede8d8; transform: translateY(-1px); }
+  .arcade-btn-secondary { background: transparent; border: 1px solid #3a3010; color: #777; padding: 10px 24px; border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.15s; }
+  .arcade-btn-secondary:hover { color: #c8a040; border-color: #6a5a20; }
+  .arcade-poster-blind { width: 120px; height: 180px; object-fit: cover; border-radius: 10px; filter: blur(20px) brightness(0.3); transition: filter 0.5s ease; cursor: pointer; }
+  .arcade-poster-blind.revealed { filter: blur(0) brightness(1); }
+  .chat-wrap { display: flex; flex-direction: column; height: 380px; background: #111113; border: 1px solid #3a3010; border-radius: 14px; overflow: hidden; }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .chat-msg { display: flex; gap: 8px; align-items: flex-start; animation: fadeSlide 0.2s ease; }
+  .chat-msg-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #000; flex-shrink: 0; }
+  .chat-msg-body { flex: 1; min-width: 0; }
+  .chat-msg-name { font-size: 10px; font-weight: 700; margin-bottom: 2px; }
+  .chat-msg-text { font-size: 13px; color: #e0e0e0; line-height: 1.4; word-break: break-word; }
+  .chat-msg-time { font-size: 10px; color: #444; margin-left: 4px; }
+  .chat-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid #2a2010; background: #141416; }
+  .chat-input { flex: 1; background: #1a1a1e; border: 1px solid #3a3010; border-radius: 8px; padding: 8px 12px; font-size: 13px; color: #f0f0f0; outline: none; }
+  .chat-input:focus { border-color: #6a5a20; }
+  .chat-send-btn { padding: 8px 16px; border-radius: 8px; background: #f5f0e8; color: #111; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .chat-send-btn:hover { background: #ede8d8; }
   .streak-banner { display:flex; align-items:center; justify-content:center; gap:6px; background:#1a1a1f; border:1px solid #ffffff33; border-radius:8px; padding:6px 14px; margin-bottom:0.75rem; font-size:13px; color:#f0f0f0; font-weight:600; animation:fadeSlide 0.3s ease; }
   .h2h-badge { font-size:10px; color:#777; text-align:center; margin-top:6px; letter-spacing:0.03em; }
   .lb-trend-up { font-size:11px; color:#4ade80; margin-left:4px; }
@@ -224,7 +283,7 @@
   .summary-poster { width:48px; height:72px; object-fit:cover; border-radius:5px; background:#1c1c1f; }
   .summary-close { margin-top:1.25rem; padding:9px 28px; border-radius:8px; border:none; background:#2d6a4f; color:#d8f3dc; font-size:14px; font-weight:700; cursor:pointer; }
   .summary-close:hover { background:#357a5c; }
-  .social-strip { display: flex; align-items: center; background: #141416; border: 1px solid #3a3010; border-radius: 10px; padding: 7px 12px; margin-bottom: 0.75rem; gap: 0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); }
+  .social-strip { display: flex; align-items: center; background: #111113; border: 1px solid #2a2010; border-radius: 10px; padding: 6px 10px; margin-bottom: 0.6rem; gap: 0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3); opacity: 0.85; }
   .social-item { flex: 1; text-align: center; padding: 2px 8px; }
   .social-label { font-size: 9px; color: #777; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
   .social-val { font-size: 15px; font-weight: 700; color: #f0f0f0; line-height: 1; }
@@ -343,6 +402,7 @@
     <button class="tab" id="tab-btn-leaderboard" onclick="showTab('leaderboard',this)">Leaderboard</button>
     <button class="tab" id="tab-btn-mymovies" onclick="showTab('mymovies',this)">My Movies</button>
     <button class="tab" id="tab-btn-friends" onclick="showTab('friends',this)">Friends</button>
+    <button class="tab" id="tab-btn-arcade" onclick="showTab('arcade',this)">Arcade</button>
   </div>
   <div id="tab-vote"><div id="vote-inner"></div></div>
   <div id="tab-leaderboard" style="display:none">
@@ -380,6 +440,31 @@
   </div>
   <div id="tab-mymovies" style="display:none"><div id="my-content"></div></div>
   <div id="tab-friends" style="display:none"><div id="friends-content"></div></div>
+  <div id="tab-arcade" style="display:none"><div id="arcade-content"></div></div>
+</div>
+
+<!-- Floating Chat -->
+<button class="float-chat-btn" id="float-chat-btn" onclick="toggleFloatChat()" title="Group chat">
+  💬
+  <span class="float-chat-badge" id="chat-badge" style="display:none">0</span>
+</button>
+<div class="float-chat-online-ring" id="chat-online-ring"></div>
+<div class="float-chat-panel" id="float-chat-panel" style="display:none">
+  <div class="float-chat-header">
+    <div class="float-chat-title">
+      💬 Group Chat
+      <div class="float-chat-online" id="chat-online-dots"></div>
+    </div>
+    <button class="float-chat-close" onclick="toggleFloatChat()">×</button>
+  </div>
+  <div class="float-chat-messages" id="float-chat-messages">
+    <div style="text-align:center;color:#555;font-size:12px;padding:1rem">Loading...</div>
+  </div>
+  <div class="float-chat-input-row">
+    <input class="float-chat-input" id="float-chat-input" placeholder="Say something..." maxlength="200"
+      onkeydown="if(event.key==='Enter')sendFloatChat()"/>
+    <button class="float-chat-send" onclick="sendFloatChat()">Send</button>
+  </div>
 </div>
 <script>
 const MOVIES = [
@@ -1482,8 +1567,7 @@ function renderMatchup() {
       <div class="social-val">${remainingPairs}</div>
     </div>
   </div>
-  <div class="progress-bar" style="margin-bottom:0.3rem"><div class="progress-fill" style="width:${pct}%"></div></div>
-  <div class="social-strip" style="margin-top:0;margin-bottom:0.6rem">
+  <div class="social-strip" style="margin-bottom:0.5rem">
     <div class="social-item">
       <div class="social-label">Agree w/ group #1</div>
       <div class="social-val">${agreementRate}</div>
@@ -1498,12 +1582,20 @@ function renderMatchup() {
       <div class="social-label">Most controversial</div>
       <div class="social-val social-val-sm">${controversialMovie}</div>
     </div>
+  </div>
+  <div style="margin-bottom:0.6rem;">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
+      <span style="font-size:11px;color:#7a6a40;text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Progress</span>
+      <span style="font-size:13px;font-weight:700;color:#c8a040">${p.matchCount} <span style="color:#555;font-weight:400;font-size:11px">of</span> ${totalUniquePairs}</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div style="text-align:right;font-size:10px;color:#555;margin-top:3px">${pct}% complete</div>
   </div>`;
   if (!currentPair) {
     html+='<div class="no-player-msg">All movies marked as unseen — restore some in My Movies!</div>';
   } else {
     const [a,b]=currentPair;
-    const hint = p.matchCount < 10 ? `<div style="text-align:center;font-size:12px;color:#777;margin-bottom:0.75rem;padding:8px 12px;background:#141416;border-radius:8px;border:1px solid #3a3010">Tip: if a movie comes up you haven't seen, tap "Haven't seen this" to remove it from your matchups</div>` : '';
+    const hint = '';
     
     const streakHtml = currentStreak >= 5 ? `<div class="streak-banner">🔥 ${currentStreak} vote streak — keep going!</div>` : '';
     // H2H history
@@ -1830,7 +1922,7 @@ function showTab(tabId,btn) {
   currentTab=tabId;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  const tabs = ['vote','leaderboard','mymovies','friends'];
+  const tabs = ['vote','leaderboard','mymovies','friends','arcade'];
   tabs.forEach(t => {
     const el = document.getElementById('tab-'+t);
     if (!el) return;
@@ -1852,6 +1944,7 @@ function showTab(tabId,btn) {
   });
   if (tabId==='vote') renderMatchup();
   if (tabId==='leaderboard') renderLeaderboard();
+  if (tabId==='arcade') renderArcade();
   if (tabId==='mymovies') {
     viewingPlayer = getPlayer() || null;
     document.getElementById('my-content').innerHTML = '<div class="empty-msg">Loading...</div>';
@@ -1953,7 +2046,561 @@ function waveBulbs() {
 }
 setInterval(waveBulbs, 50);
 
+
+// ═══════════════════════════════════════════════════════
+// ARCADE STATE
+// ═══════════════════════════════════════════════════════
+let arcadeState = { game: null, score: 0, question: 0, total: 10, answers: [], data: [] };
+let chatPollInterval = null;
+let lastChatId = null;
+
+// ═══════════════════════════════════════════════════════
+// RENDER ARCADE HUB
+// ═══════════════════════════════════════════════════════
+async function renderArcade() {
+  const el = document.getElementById('arcade-content');
+  const player = getPlayer();
+
+  // Load high scores
+  let scores = {};
+  try {
+    const rows = await sbFetch('/rest/v1/arcade_scores?select=player,game,score&order=score.desc&limit=100');
+    if (rows) rows.forEach(r => {
+      if (!scores[r.game]) scores[r.game] = [];
+      scores[r.game].push(r);
+    });
+  } catch(e) {}
+
+  const games = [
+    { id: 'trivia', icon: '🎬', title: 'Movie Trivia', desc: 'Test your knowledge — director, year, cast. 10 questions, beat the clock.' },
+    { id: 'boxoffice', icon: '💰', title: 'Box Office Showdown', desc: 'Which movie made more money? Guess the bigger hit from the 56 films.' },
+    { id: 'blind', icon: '👁️', title: 'Blind Ranking', desc: 'Rank 5 blurred posters. Titles revealed after — how close were you?' },
+  ];
+
+  let html = `<div class="section-label">Pick a game</div>
+  <div class="arcade-grid">`;
+
+  games.forEach(g => {
+    const topScores = (scores[g.id] || []).slice(0, 3);
+    const myBest = (scores[g.id] || []).filter(s => s.player === player)[0];
+    html += `<div class="arcade-card" onclick="startArcadeGame('${g.id}')">
+      <div class="arcade-card-icon">${g.icon}</div>
+      <div class="arcade-card-title">${g.title}</div>
+      <div class="arcade-card-desc">${g.desc}</div>
+      ${myBest ? `<div style="font-size:11px;color:#c8a040;margin-top:4px">Your best: ${myBest.score} pts</div>` : ''}
+      ${topScores.length > 0 ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+        ${topScores.map((s,i)=>`<span class="arcade-score-pill" style="background:${PLAYER_COLORS[s.player]||'#333'}22;color:${PLAYER_COLORS[s.player]||'#aaa'};border:1px solid ${PLAYER_COLORS[s.player]||'#444'}44">${['🥇','🥈','🥉'][i]} ${s.player}: ${s.score}</span>`).join('')}
+      </div>` : ''}
+    </div>`;
+  });
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+// FLOATING CHAT
+// ═══════════════════════════════════════════════════════
+let chatOpen = false;
+let unreadCount = 0;
+let lastChatTimestamp = null;
+
+function toggleFloatChat() {
+  chatOpen = !chatOpen;
+  const panel = document.getElementById('float-chat-panel');
+  const badge = document.getElementById('chat-badge');
+  panel.style.display = chatOpen ? 'flex' : 'none';
+  if (chatOpen) {
+    unreadCount = 0;
+    badge.style.display = 'none';
+    loadFloatChat();
+    const input = document.getElementById('float-chat-input');
+    const player = getPlayer();
+    if (input) {
+      input.placeholder = player ? 'Say something...' : 'Select your name to chat';
+      input.disabled = !player;
+      setTimeout(() => input.focus(), 100);
+    }
+  }
+}
+
+function renderChatMessage(m) {
+  const col = PLAYER_COLORS[m.player] || '#888';
+  const t = new Date(m.created_at);
+  const now = new Date();
+  const diff = Math.floor((now - t) / 60000);
+  const timeStr = diff < 1 ? 'now' : diff < 60 ? `${diff}m` : diff < 1440 ? `${Math.floor(diff/60)}h` : `${Math.floor(diff/1440)}d`;
+  return `<div class="chat-msg">
+    <div class="chat-msg-avatar" style="background:${col};width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#000;flex-shrink:0">${m.player[0]}</div>
+    <div class="chat-msg-body" style="flex:1;min-width:0">
+      <span style="font-size:10px;font-weight:700;color:${col}">${m.player}</span>
+      <span style="font-size:10px;color:#444;margin-left:4px">${timeStr}</span>
+      <div style="font-size:12px;color:#e0e0e0;line-height:1.4;word-break:break-word;margin-top:1px">${m.message.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    </div>
+  </div>`;
+}
+
+async function loadFloatChat() {
+  try {
+    const msgs = await sbFetch('/rest/v1/chat?select=id,player,message,created_at&order=created_at.desc&limit=60');
+    if (!msgs) return;
+    const sorted = msgs.reverse();
+    
+    // Update online indicators (active in last 10 min)
+    const recentPlayers = new Set(sorted.filter(m => (Date.now() - new Date(m.created_at)) < 600000).map(m => m.player));
+    const onlineDots = document.getElementById('chat-online-dots');
+    if (onlineDots) {
+      onlineDots.innerHTML = [...recentPlayers].map(p =>
+        `<span class="online-dot" style="background:${PLAYER_COLORS[p]||'#888'}" title="${p}"></span>`
+      ).join('');
+    }
+    // Show green ring if anyone else is online (active in last 10 min)
+    const currentPlayer = getPlayer();
+    const othersOnline = [...recentPlayers].filter(p => p !== currentPlayer);
+    const ring = document.getElementById('chat-online-ring');
+    if (ring) ring.style.display = othersOnline.length > 0 ? 'block' : 'none';
+
+    const el = document.getElementById('float-chat-messages');
+    if (!el) return;
+    const wasAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 60;
+    
+    // Check for new messages
+    if (sorted.length > 0) {
+      const newestTs = sorted[sorted.length-1].created_at;
+      if (lastChatTimestamp && newestTs > lastChatTimestamp && !chatOpen) {
+        const newMsgs = sorted.filter(m => m.created_at > lastChatTimestamp);
+        unreadCount += newMsgs.length;
+        const badge = document.getElementById('chat-badge');
+        if (badge) { badge.textContent = unreadCount > 9 ? '9+' : unreadCount; badge.style.display = 'flex'; }
+        // Pulse the button
+        const btn = document.getElementById('float-chat-btn');
+        if (btn) { btn.style.transform = 'scale(1.2)'; setTimeout(() => btn.style.transform = '', 300); }
+      }
+      lastChatTimestamp = newestTs;
+    }
+
+    el.innerHTML = sorted.length === 0
+      ? '<div style="text-align:center;color:#555;font-size:12px;padding:2rem">No messages yet. Say hi! 👋</div>'
+      : sorted.map(renderChatMessage).join('');
+    
+    if (wasAtBottom || !lastChatTimestamp) el.scrollTop = el.scrollHeight;
+  } catch(e) {}
+}
+
+async function sendFloatChat() {
+  const player = getPlayer();
+  if (!player) { showToast('Select your name to chat!'); return; }
+  const input = document.getElementById('float-chat-input');
+  const msg = input.value.trim(); if (!msg) return;
+  input.value = '';
+  try {
+    await sbFetch('/rest/v1/chat', {
+      method: 'POST',
+      body: JSON.stringify({ player, message: msg })
+    });
+    loadFloatChat();
+  } catch(e) {}
+}
+
+// Legacy aliases kept for arcade tab compatibility
+async function loadChat() { return loadFloatChat(); }
+async function sendChat() { return sendFloatChat(); }
+
+// ═══════════════════════════════════════════════════════
+// ARCADE GAME ROUTER
+// ═══════════════════════════════════════════════════════
+function startArcadeGame(gameId) {
+  if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+  arcadeState = { game: gameId, score: 0, question: 0, total: 10, answers: [], data: [] };
+  if (gameId === 'trivia') startTrivia();
+  if (gameId === 'boxoffice') startBoxOffice();
+  if (gameId === 'blind') startBlind();
+}
+
+function backToArcade() {
+  if (chatPollInterval) clearInterval(chatPollInterval);
+  renderArcade();
+}
+
+async function saveArcadeScore(game, score) {
+  const player = getPlayer(); if (!player) return;
+  const id = player + '_' + game;
+  try {
+    // Upsert only if new score is higher
+    const existing = await sbFetch(`/rest/v1/arcade_scores?id=eq.${encodeURIComponent(id)}&select=score`);
+    if (existing && existing.length > 0 && existing[0].score >= score) return;
+    await sbFetch('/rest/v1/arcade_scores', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates',
+      body: JSON.stringify({ id, player, game, score, played_at: new Date().toISOString() })
+    });
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME 1: MOVIE TRIVIA
+// ═══════════════════════════════════════════════════════
+const TRIVIA_Q_TEMPLATES = [
+  (m, d) => d.Director && d.Director !== 'N/A' ? {
+    q: `Who directed "${m.title}"?`,
+    correct: d.Director.split(',')[0].trim(),
+    wrong: () => {
+      const others = MOVIES.filter(x=>x.id!==m.id);
+      const picks = [];
+      while (picks.length < 3) { const r = others[Math.floor(Math.random()*others.length)]; if (!picks.includes(r)) picks.push(r); }
+      return picks.map(x => x._director || 'Unknown Director').filter(x=>x!=='Unknown Director').slice(0,3);
+    }
+  } : null,
+  (m, d) => d.Year && d.Year !== 'N/A' ? {
+    q: `What year was "${m.title}" released?`,
+    correct: d.Year,
+    wrong: () => {
+      const yr = parseInt(d.Year);
+      const offsets = [-2,-1,1,2,3,-3].sort(()=>Math.random()-0.5).slice(0,3);
+      return offsets.map(o => String(yr + o));
+    }
+  } : null,
+  (m, d) => d.imdbRating && d.imdbRating !== 'N/A' ? {
+    q: `What is the IMDb rating of "${m.title}"?`,
+    correct: d.imdbRating,
+    wrong: () => {
+      const r = parseFloat(d.imdbRating);
+      return [Math.max(1,r-1.2).toFixed(1), Math.min(10,r+0.9).toFixed(1), Math.max(1,r-0.6).toFixed(1)];
+    }
+  } : null,
+  (m, d) => d.Genre && d.Genre !== 'N/A' ? {
+    q: `What genre is "${m.title}"?`,
+    correct: d.Genre.split(',')[0].trim(),
+    wrong: () => ['Action','Comedy','Drama','Horror','Sci-Fi','Thriller','Romance','Animation'].filter(g=>!d.Genre.includes(g)).sort(()=>Math.random()-0.5).slice(0,3)
+  } : null,
+];
+
+async function startTrivia() {
+  const el = document.getElementById('arcade-content');
+  el.innerHTML = `<div class="arcade-game"><div style="text-align:center;color:#777;padding:2rem">Loading trivia questions...</div></div>`;
+  
+  // Pick 10 random movies and fetch their OMDB data
+  const pool = [...MOVIES].sort(() => Math.random() - 0.5).slice(0, 20);
+  const questions = [];
+  
+  for (const m of pool) {
+    if (questions.length >= 10) break;
+    try {
+      let d = MOVIE_CACHE[m.id];
+      if (!d) {
+        const imdbId = IMDB_URLS[m.id].match(/tt\d+/)?.[0];
+        if (!imdbId) continue;
+        const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbId}&plot=short`);
+        d = await res.json();
+        if (d.Response === 'True') MOVIE_CACHE[m.id] = d;
+        else continue;
+      }
+      // Store director for wrong answers
+      m._director = d.Director ? d.Director.split(',')[0].trim() : null;
+      const templates = TRIVIA_Q_TEMPLATES.map(t => t(m, d)).filter(Boolean);
+      if (templates.length === 0) continue;
+      const t = templates[Math.floor(Math.random() * templates.length)];
+      const wrongAnswers = t.wrong();
+      const allAnswers = [t.correct, ...wrongAnswers].sort(() => Math.random() - 0.5);
+      questions.push({ movie: m, question: t.q, correct: t.correct, answers: allAnswers, img: m.img });
+    } catch(e) { continue; }
+  }
+
+  arcadeState.data = questions;
+  arcadeState.total = questions.length;
+  renderTriviaQuestion();
+}
+
+function renderTriviaQuestion() {
+  const el = document.getElementById('arcade-content');
+  const { question, score, total, data } = arcadeState;
+  
+  if (question >= data.length) {
+    saveArcadeScore('trivia', score);
+    el.innerHTML = `<div class="arcade-game" style="text-align:center">
+      <div class="arcade-card-icon" style="font-size:48px;margin-bottom:8px">🎬</div>
+      <div class="arcade-game-title">Trivia Complete!</div>
+      <div class="arcade-score-display">${score}</div>
+      <div class="arcade-score-label">points out of ${total * 100}</div>
+      <div style="margin-top:1rem;color:#777;font-size:13px">${score >= total*80 ? '🌟 Movie genius!' : score >= total*50 ? '👍 Not bad!' : '📚 Keep watching!'}</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
+        <button class="arcade-btn" onclick="startArcadeGame('trivia')">Play again</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const q = data[question];
+  const pct = Math.round((question / total) * 100);
+  el.innerHTML = `<div class="arcade-game">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
+      <span style="font-size:13px;color:#c8a040;font-weight:700">${score} pts</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <div style="flex:1;height:4px;background:#1e1910;border-radius:99px"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#6a5a20,#c8a040);border-radius:99px;transition:width 0.3s"></div></div>
+      <span style="font-size:11px;color:#555">${question+1}/${total}</span>
+    </div>
+    <img src="${q.img}" style="width:80px;height:120px;object-fit:cover;border-radius:8px;display:block;margin:0.75rem auto;box-shadow:0 4px 16px rgba(0,0,0,0.5)"/>
+    <div class="arcade-question">${q.question}</div>
+    <div class="arcade-options">
+      ${q.answers.map(a => `<button class="arcade-option" onclick="answerTrivia(this,'${a.replace(/'/g,"\\'")}','${q.correct.replace(/'/g,"\\'")}')"> ${a}</button>`).join('')}
+    </div>
+  </div>`;
+}
+
+function answerTrivia(btn, answer, correct) {
+  const isCorrect = answer === correct;
+  const allBtns = document.querySelectorAll('.arcade-option');
+  allBtns.forEach(b => {
+    b.onclick = null;
+    if (b.textContent.trim() === correct) b.classList.add('reveal');
+  });
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  if (isCorrect) arcadeState.score += 100;
+  arcadeState.question++;
+  setTimeout(renderTriviaQuestion, 1200);
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME 2: BOX OFFICE SHOWDOWN
+// ═══════════════════════════════════════════════════════
+// Approximate box office data (millions USD) for our 56 movies
+const BOX_OFFICE_DATA = {
+  'Avatar: Fire and Ash': 690, 'Zootopia 2': 480, 'The Running Man': 52, 'Tron: Ares': 95,
+  'Snow White': 210, 'Wicked: For Good': 320, 'Mission: Impossible': 580, 'Jurassic World Rebirth': 440,
+  'Karate Kid: Legends': 130, 'How to Train Your Dragon': 370, 'Lilo & Stitch': 280, 'Elio': 95,
+  'Thunderbolts': 340, 'Captain America': 410, 'Superman': 520, 'Ballerina': 180,
+  'Bugonia': 28, 'Novocaine': 35, 'Predator: Badlands': 88, 'The Accountant 2': 92,
+  'Final Destination Bloodlines': 105, 'Clift': 42, 'Warfare': 22, 'Sinners': 180,
+  'A Minecraft Movie': 890, 'Until Dawn': 68, 'The Electric State': 0,
+};
+
+async function startBoxOffice() {
+  const el = document.getElementById('arcade-content');
+  // Pick pairs of movies
+  const pool = [...MOVIES].sort(() => Math.random() - 0.5);
+  arcadeState.data = [];
+  for (let i = 0; i < pool.length - 1 && arcadeState.data.length < 10; i += 2) {
+    arcadeState.data.push([pool[i], pool[i+1]]);
+  }
+  arcadeState.total = arcadeState.data.length;
+  renderBoxOfficeQuestion();
+}
+
+async function renderBoxOfficeQuestion() {
+  const el = document.getElementById('arcade-content');
+  const { question, score, total, data } = arcadeState;
+
+  if (question >= data.length) {
+    saveArcadeScore('boxoffice', score);
+    el.innerHTML = `<div class="arcade-game" style="text-align:center">
+      <div class="arcade-card-icon" style="font-size:48px;margin-bottom:8px">💰</div>
+      <div class="arcade-game-title">Showdown Complete!</div>
+      <div class="arcade-score-display">${score}</div>
+      <div class="arcade-score-label">points</div>
+      <div style="margin-top:1rem;color:#777;font-size:13px">${score >= total*80 ? '💵 Box office oracle!' : score >= total*50 ? '📊 Solid instincts!' : '🎟️ Keep watching!'}</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
+        <button class="arcade-btn" onclick="startArcadeGame('boxoffice')">Play again</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  const [a, b] = data[question];
+  const pct = Math.round((question / total) * 100);
+  el.innerHTML = `<div class="arcade-game">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
+      <span style="font-size:13px;color:#c8a040;font-weight:700">${score} pts</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:1rem">
+      <div style="flex:1;height:4px;background:#1e1910;border-radius:99px"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#6a5a20,#c8a040);border-radius:99px;transition:width 0.3s"></div></div>
+      <span style="font-size:11px;color:#555">${question+1}/${total}</span>
+    </div>
+    <div class="arcade-question" style="margin-top:0">Which made more money at the box office?</div>
+    <div style="display:flex;gap:12px;justify-content:center;margin:1rem 0">
+      <div onclick="answerBoxOffice(this,'${a.id}','${b.id}')" style="flex:1;max-width:180px;background:#1a1a1e;border:1px solid #3a3010;border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='#6a5a20';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#3a3010';this.style.transform='translateY(0)'">
+        <img src="${a.img}" style="width:80px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;box-shadow:0 4px 12px rgba(0,0,0,0.5)"/>
+        <div style="font-size:12px;font-weight:600;color:#e0e0e0;line-height:1.3">${a.title}</div>
+      </div>
+      <div style="display:flex;align-items:center;font-size:16px;font-weight:800;color:#c8a040">VS</div>
+      <div onclick="answerBoxOffice(this,'${b.id}','${a.id}')" style="flex:1;max-width:180px;background:#1a1a1e;border:1px solid #3a3010;border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='#6a5a20';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#3a3010';this.style.transform='translateY(0)'">
+        <img src="${b.img}" style="width:80px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;box-shadow:0 4px 12px rgba(0,0,0,0.5)"/>
+        <div style="font-size:12px;font-weight:600;color:#e0e0e0;line-height:1.3">${b.title}</div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:#555">Based on worldwide box office gross</div>
+  </div>`;
+}
+
+function answerBoxOffice(el, pickedId, otherId) {
+  const [a, b] = arcadeState.data[arcadeState.question];
+  const pickedMovie = MOVIES.find(m => m.id === pickedId);
+  const otherMovie = MOVIES.find(m => m.id === otherId);
+  const pickedBo = BOX_OFFICE_DATA[pickedMovie.title] || 50;
+  const otherBo = BOX_OFFICE_DATA[otherMovie.title] || 50;
+  const isCorrect = pickedBo >= otherBo;
+  
+  el.style.borderColor = isCorrect ? '#4ade80' : '#f87171';
+  el.style.background = isCorrect ? '#0a2010' : '#200a0a';
+  if (isCorrect) arcadeState.score += 100;
+
+  // Show box office numbers
+  const parent = el.parentElement;
+  const cards = parent.querySelectorAll('[onclick]');
+  cards.forEach(c => { c.onclick = null; c.onmouseover = null; c.onmouseout = null; });
+  
+  const infoDiv = document.createElement('div');
+  infoDiv.style.cssText = 'text-align:center;margin-top:0.75rem;font-size:12px;color:#777;';
+  infoDiv.innerHTML = `${pickedMovie.title}: <strong style="color:#c8a040">$${pickedBo}M</strong> &nbsp;·&nbsp; ${otherMovie.title}: <strong style="color:#c8a040">$${otherBo}M</strong>`;
+  parent.after(infoDiv);
+
+  arcadeState.question++;
+  setTimeout(renderBoxOfficeQuestion, 1500);
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME 3: BLIND RANKING
+// ═══════════════════════════════════════════════════════
+let blindOrder = [];
+let blindDragging = null;
+
+function startBlind() {
+  const pool = [...MOVIES].sort(() => Math.random() - 0.5).slice(0, 5);
+  arcadeState.data = pool;
+  blindOrder = [...pool];
+  renderBlindGame();
+}
+
+function renderBlindGame() {
+  const el = document.getElementById('arcade-content');
+  const { data } = arcadeState;
+  
+  el.innerHTML = `<div class="arcade-game">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
+      <span style="font-size:12px;color:#777">Drag to rank</span>
+    </div>
+    <div class="arcade-question" style="margin-top:0;font-size:14px">Rank these blurred posters #1 (best) to #5 (worst)</div>
+    <div style="font-size:11px;color:#555;text-align:center;margin-bottom:1rem">Tap any poster to get a 1-second hint</div>
+    <div id="blind-list" style="display:flex;flex-direction:column;gap:8px">
+      ${blindOrder.map((m, i) => `
+        <div class="blind-item" data-id="${m.id}" draggable="true"
+          style="display:flex;align-items:center;gap:12px;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:8px 12px;cursor:grab;touch-action:none"
+          ondragstart="blindDragStart(event)" ondragover="blindDragOver(event)" ondrop="blindDrop(event)" ondragend="blindDragEnd(event)">
+          <span style="font-size:18px;color:#555;font-weight:700;width:20px;text-align:center">${i+1}</span>
+          <img src="${m.img}" class="arcade-poster-blind" onclick="blindHint(this)" style="width:50px;height:75px"/>
+          <span style="font-size:13px;color:#555;font-style:italic">Hidden title</span>
+          <span style="margin-left:auto;font-size:18px;color:#3a3020">⠿</span>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;justify-content:center;margin-top:1.25rem">
+      <button class="arcade-btn" onclick="revealBlind()">Reveal & Score →</button>
+    </div>
+  </div>`;
+}
+
+function blindHint(img) {
+  img.style.filter = 'blur(4px) brightness(0.7)';
+  setTimeout(() => { img.style.filter = 'blur(20px) brightness(0.3)'; }, 1000);
+}
+
+function blindDragStart(e) {
+  blindDragging = e.currentTarget;
+  e.currentTarget.style.opacity = '0.4';
+  e.dataTransfer.effectAllowed = 'move';
+}
+function blindDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const item = e.currentTarget;
+  if (item !== blindDragging && item.classList.contains('blind-item')) {
+    const list = item.parentNode;
+    const items = [...list.querySelectorAll('.blind-item')];
+    const dragIdx = items.indexOf(blindDragging);
+    const targetIdx = items.indexOf(item);
+    if (dragIdx < targetIdx) list.insertBefore(blindDragging, item.nextSibling);
+    else list.insertBefore(blindDragging, item);
+    // Update numbers
+    [...list.querySelectorAll('.blind-item')].forEach((el, i) => {
+      el.querySelector('span').textContent = i + 1;
+    });
+  }
+}
+function blindDrop(e) { e.preventDefault(); }
+function blindDragEnd(e) { e.currentTarget.style.opacity = '1'; }
+
+function revealBlind() {
+  const el = document.getElementById('arcade-content');
+  const list = document.getElementById('blind-list');
+  const items = [...list.querySelectorAll('.blind-item')];
+  const userOrder = items.map(item => MOVIES.find(m => m.id === item.dataset.id));
+  
+  // Compare to actual ELO ranking
+  const player = getPlayer();
+  const p = player ? state.players[player] : null;
+  const actualRanking = [...arcadeState.data].sort((a, b) => {
+    if (p && p.ratings[a.id].matches > 0 && p.ratings[b.id].matches > 0) {
+      return p.ratings[b.id].elo - p.ratings[a.id].elo;
+    }
+    return state.globalRatings[b.id].elo - state.globalRatings[a.id].elo;
+  });
+
+  // Score: 100 pts for each in correct position, 50 for 1 off
+  let score = 0;
+  userOrder.forEach((m, i) => {
+    const actualPos = actualRanking.findIndex(x => x.id === m.id);
+    const diff = Math.abs(i - actualPos);
+    if (diff === 0) score += 100;
+    else if (diff === 1) score += 50;
+  });
+  arcadeState.score = score;
+  saveArcadeScore('blind', score);
+
+  // Reveal all posters and show results
+  el.innerHTML = `<div class="arcade-game">
+    <div class="arcade-game-title" style="text-align:center;margin-bottom:0.5rem">Revealed! 👁️</div>
+    <div class="arcade-score-display">${score}</div>
+    <div class="arcade-score-label">points (500 max)</div>
+    <div style="display:flex;gap:12px;margin:1.25rem 0;overflow-x:auto;padding-bottom:4px">
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:10px;color:#777;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;text-align:center">Your ranking</div>
+        ${userOrder.map((m,i) => {
+          const actualPos = actualRanking.findIndex(x=>x.id===m.id);
+          const diff = Math.abs(i - actualPos);
+          const col = diff === 0 ? '#4ade80' : diff === 1 ? '#c8a040' : '#f87171';
+          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a1e">
+            <span style="font-size:12px;font-weight:700;color:${col};width:16px">${i+1}</span>
+            <img src="${m.img}" style="width:32px;height:48px;object-fit:cover;border-radius:4px"/>
+            <span style="font-size:11px;color:#ccc;line-height:1.2">${m.title.length>20?m.title.slice(0,19)+'…':m.title}</span>
+            <span style="margin-left:auto;font-size:11px;color:${col}">${diff===0?'✓':diff===1?'~1':'✗'}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:10px;color:#777;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;text-align:center">Actual ranking</div>
+        ${actualRanking.map((m,i) => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a1e">
+          <span style="font-size:12px;font-weight:700;color:#c8a040;width:16px">${i+1}</span>
+          <img src="${m.img}" style="width:32px;height:48px;object-fit:cover;border-radius:4px"/>
+          <span style="font-size:11px;color:#ccc;line-height:1.2">${m.title.length>20?m.title.slice(0,19)+'…':m.title}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:1rem">
+      <button class="arcade-btn" onclick="startArcadeGame('blind')">Play again</button>
+      <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+    </div>
+  </div>`;
+}
+
 loadFromDB();
+
+// Start global chat polling
+setInterval(() => { loadFloatChat(); }, 5000);
+setTimeout(() => { loadFloatChat(); }, 2000);
 </script>
 </body>
 </html>
