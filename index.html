@@ -694,6 +694,9 @@ async function loadFromDB() {
         state.players[last].playedPairs = [...mergedSet];
         // Save back to localStorage
         try { localStorage.setItem(lsKey, JSON.stringify(state.players[last].playedPairs)); } catch(e) {}
+
+        // Re-render vote screen now that playedPairs are fully loaded
+        if (currentTab === 'vote') renderMatchup();
       } catch(e) {}
     }
   } catch(e) {}
