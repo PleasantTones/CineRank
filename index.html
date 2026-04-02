@@ -2095,6 +2095,55 @@ async function renderArcade() {
   });
   html += '</div>';
 
+  // ── ARCADE LEADERBOARDS ──
+  html += `<div class="section-label" style="margin-top:1.5rem">Arcade leaderboards</div>`;
+
+  const gameLabels = { trivia: '🎬 Movie Trivia', boxoffice: '💰 Box Office Showdown', blind: '👁️ Blind Ranking' };
+  const maxPts = { trivia: 1000, boxoffice: 1000, blind: 500 };
+
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">`;
+
+  ['trivia','boxoffice','blind'].forEach(gameId => {
+    const gameScores = (scores[gameId] || []).sort((a,b) => b.score - a.score);
+    const max = maxPts[gameId];
+    html += `<div style="background:#111113;border:1px solid #3a3010;border-radius:12px;overflow:hidden">
+      <div style="padding:10px 14px;border-bottom:1px solid #2a2010;font-size:12px;font-weight:700;color:#c8a040">${gameLabels[gameId]}</div>`;
+
+    if (gameScores.length === 0) {
+      html += `<div style="padding:14px;text-align:center;font-size:12px;color:#555">No scores yet — be first!</div>`;
+    } else {
+      const medals = ['🥇','🥈','🥉'];
+      gameScores.forEach((s, i) => {
+        const col = PLAYER_COLORS[s.player] || '#888';
+        const barW = Math.round((s.score / max) * 100);
+        const isMe = s.player === player;
+        html += `<div style="padding:8px 14px;border-bottom:1px solid #1a1a1e;${isMe?'background:#1a1710':''}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span style="font-size:13px;width:20px">${medals[i] || '#'+(i+1)}</span>
+            <span style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></span>
+            <span style="font-size:13px;font-weight:${isMe?'700':'500'};color:${isMe?'#f0f0f0':'#ccc'};flex:1">${s.player}</span>
+            <span style="font-size:13px;font-weight:700;color:#c8a040">${s.score}</span>
+          </div>
+          <div style="height:3px;background:#1e1910;border-radius:99px;margin-left:28px">
+            <div style="width:${barW}%;height:100%;background:linear-gradient(90deg,#6a5a20,#c8a040);border-radius:99px"></div>
+          </div>
+        </div>`;
+      });
+      // Fill empty slots up to 3
+      for (let i = gameScores.length; i < 3; i++) {
+        html += `<div style="padding:8px 14px;border-bottom:1px solid #1a1a1e;opacity:0.4">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:13px;width:20px">${medals[i]}</span>
+            <span style="font-size:13px;color:#555">—</span>
+          </div>
+        </div>`;
+      }
+    }
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+
   el.innerHTML = html;
 }
 
