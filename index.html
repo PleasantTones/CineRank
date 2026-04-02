@@ -2101,12 +2101,12 @@ async function renderArcade() {
   const gameLabels = { trivia: '🎬 Movie Trivia', boxoffice: '💰 Box Office Showdown', blind: '👁️ Blind Ranking' };
   const maxPts = { trivia: 1000, boxoffice: 1000, blind: 500 };
 
-  html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">`;
+  html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:stretch">`;
 
   ['trivia','boxoffice','blind'].forEach(gameId => {
     const gameScores = (scores[gameId] || []).sort((a,b) => b.score - a.score);
     const max = maxPts[gameId];
-    html += `<div style="background:#111113;border:1px solid #3a3010;border-radius:12px;overflow:hidden">
+    html += `<div style="background:#111113;border:1px solid #3a3010;border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
       <div style="padding:10px 14px;border-bottom:1px solid #2a2010;font-size:12px;font-weight:700;color:#c8a040">${gameLabels[gameId]}</div>`;
 
     if (gameScores.length === 0) {
