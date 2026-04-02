@@ -665,12 +665,27 @@ async function loadFromDB() {
       setupIndex = decidedIds.size >= MOVIES.length ? MOVIES.length :
         (() => { const i = MOVIES.findIndex(m => !decidedIds.has(m.id)); return i === -1 ? MOVIES.length : i; })();
 
-      // Load played pairs for this player - await so renderMatchup has correct data
+      // Load played pairs - merge DB + localStorage for reliability
       try {
+        // Get from localStorage first (most complete - saved on every vote)
+        const lsKey = 'playedPairs_' + last;
+        let lsPairs = [];
+        try {
+          lsPairs = JSON.parse(localStorage.getItem(lsKey) || '[]');
+        } catch(e) {}
+
+        // Also fetch from DB matchups table
         const matchupRows = await fetchPlayerMatchups(last);
-        if (matchupRows && matchupRows.length > 0) {
-          state.players[last].playedPairs = matchupRows.map(r => pairKey(r.movie_a, r.movie_b));
-        }
+        const dbPairs = matchupRows ? matchupRows.map(r => pairKey(r.movie_a, r.movie_b)) : [];
+
+        // Merge both sources - union of all known played pairs
+        const mergedSet = new Set([...lsPairs, ...dbPairs]);
+        state.players[last].playedPairs = [...mergedSet];
+
+        // Update localStorage with the merged set (fills any gaps)
+        try {
+          localStorage.setItem(lsKey, JSON.stringify(state.players[last].playedPairs));
+        } catch(e) {}
       } catch(e) {}
     }
   } catch(e) {}
@@ -986,6 +1001,12 @@ function vote(winnerId) {
     p.h2hHistory[pairKey(winnerId, loserId)] = winnerId;
     // Streak
     currentStreak++;
+    // Persist playedPairs to localStorage as reliable backup
+    try { localStorage.setItem('playedPairs_' + player, JSON.stringify(p.playedPairs)); } catch(e) {}
+    // Persist playedPairs to localStorage as reliable backup
+    try {
+      localStorage.setItem('playedPairs_' + player, JSON.stringify(p.playedPairs));
+    } catch(e) {}
     rebuildGlobal();
     saveMatchupToDB(player, winnerId, loserId);
     const _seenCount = MOVIES.filter(m => !p.ratings[m.id].unseen).length;
