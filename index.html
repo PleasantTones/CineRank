@@ -135,8 +135,8 @@
   .empty-msg { font-size: 14px; color: #777; padding: 2.5rem 0; text-align: center; }
   .float-chat-btn { position: fixed; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; background: #f5f0e8; color: #111; border: none; font-size: 22px; cursor: pointer; z-index: 500; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
   .float-chat-btn:hover { transform: scale(1.1); box-shadow: 0 6px 28px rgba(0,0,0,0.6); }
-  .float-chat-online-ring { position: absolute; bottom: 24px; right: 24px; width: 52px; height: 52px; border-radius: 50%; border: 2.5px solid #4ade80; z-index: 499; pointer-events: none; box-shadow: 0 0 8px rgba(74,222,128,0.6); animation: onlinePulse 2.5s ease-in-out infinite; display: none; }
-  @keyframes onlinePulse { 0%,100%{box-shadow:0 0 6px rgba(74,222,128,0.5)} 50%{box-shadow:0 0 14px rgba(74,222,128,0.9)} }
+  .float-chat-btn.others-online { box-shadow: 0 0 0 3px #4ade80, 0 4px 20px rgba(0,0,0,0.5); animation: onlinePulse 2.5s ease-in-out infinite; }
+  @keyframes onlinePulse { 0%,100%{box-shadow:0 0 0 3px #4ade80, 0 4px 20px rgba(0,0,0,0.5)} 50%{box-shadow:0 0 0 3px #4ade80, 0 0 18px rgba(74,222,128,0.7), 0 4px 20px rgba(0,0,0,0.5)} }
   .float-chat-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; border-radius: 50%; background: #c8a040; color: #000; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 2px solid #0c0c0e; }
   .float-chat-panel { position: fixed; bottom: 86px; right: 24px; width: 320px; max-height: 460px; background: #141416; border: 1px solid #3a3010; border-radius: 16px; z-index: 500; box-shadow: 0 8px 40px rgba(0,0,0,0.7); display: flex; flex-direction: column; overflow: hidden; animation: slideUpChat 0.2s ease; }
   @keyframes slideUpChat { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
@@ -448,7 +448,6 @@
   💬
   <span class="float-chat-badge" id="chat-badge" style="display:none">0</span>
 </button>
-<div class="float-chat-online-ring" id="chat-online-ring"></div>
 <div class="float-chat-panel" id="float-chat-panel" style="display:none">
   <div class="float-chat-header">
     <div class="float-chat-title">
@@ -750,21 +749,30 @@ async function loadFromDB() {
       setupIndex = decidedIds.size >= MOVIES.length ? MOVIES.length :
         (() => { const i = MOVIES.findIndex(m => !decidedIds.has(m.id)); return i === -1 ? MOVIES.length : i; })();
 
-      // Load played pairs - merge DB + localStorage + ratings reconstruction
+      // Load played pairs - definitive reconstruction from all available sources
       try {
         const lsKey = 'playedPairs_' + last;
-        let lsPairs = [];
-        try { lsPairs = JSON.parse(localStorage.getItem(lsKey) || '[]'); } catch(e) {}
+        const mergedSet = new Set();
 
-        // Fetch from DB matchups table
-        const matchupRows = await fetchPlayerMatchups(last);
-        const dbPairs = matchupRows ? matchupRows.map(r => pairKey(r.movie_a, r.movie_b)) : [];
+        // Source 1: localStorage (most reliable for recent votes)
+        try {
+          const lsPairs = JSON.parse(localStorage.getItem(lsKey) || '[]');
+          lsPairs.forEach(p => mergedSet.add(p));
+        } catch(e) {}
 
-        // Reconstruct from ratings if we're missing pairs
+        // Source 2: DB matchups table
+        try {
+          const matchupRows = await fetchPlayerMatchups(last);
+          if (matchupRows) matchupRows.forEach(r => mergedSet.add(pairKey(r.movie_a, r.movie_b)));
+        } catch(e) {}
+
+        // Source 3 (KEY): Always reconstruct from ratings regardless of other sources
+        // If a movie has been matched, ALL pairs between voted movies are assumed played
+        // This is conservative but prevents ANY duplicates
         const votedMovies = MOVIES.filter(m => state.players[last].ratings[m.id].matches > 0);
         const expectedMatchups = Math.round(MOVIES.reduce((s,m) => s + state.players[last].ratings[m.id].matches, 0) / 2);
-        const mergedSet = new Set([...lsPairs, ...dbPairs]);
 
+        // Always reconstruct if we have fewer pairs than expected matchups
         if (mergedSet.size < expectedMatchups && votedMovies.length >= 2) {
           for (let i = 0; i < votedMovies.length; i++) {
             for (let j = i + 1; j < votedMovies.length; j++) {
@@ -774,8 +782,12 @@ async function loadFromDB() {
         }
 
         state.players[last].playedPairs = [...mergedSet];
+
+        // Save back to localStorage immediately so it persists
         try { localStorage.setItem(lsKey, JSON.stringify(state.players[last].playedPairs)); } catch(e) {}
-      } catch(e) {}
+
+        console.log(`[CineRank] ${last}: ${mergedSet.size} played pairs loaded (${expectedMatchups} expected from ratings)`);
+      } catch(e) { console.error('[CineRank] Error loading pairs:', e); }
     }
   } catch(e) {}
 
@@ -1476,10 +1488,24 @@ function pickPair(p) {
     return candidates[Math.floor(Math.random() * candidates.length)];
   }
 
-  // All pairs played — reset and start second round
-  p.playedPairs = [];
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  return [shuffled[0], shuffled[1]];
+  // All pairs played — notify and start second round
+  console.log('[CineRank] All pairs completed! Starting round 2.');
+  // Keep playedPairs so stats stay accurate, but allow repeats for round 2
+  const played2 = new Set(p.playedPairs || []);
+  const allPairs = [];
+  for (let i = 0; i < pool.length; i++) {
+    for (let j = i + 1; j < pool.length; j++) {
+      allPairs.push([pool[i], pool[j]]);
+    }
+  }
+  // Sort by closest ELO for best round 2 matchups
+  allPairs.sort((a,b) => {
+    const diffA = Math.abs(p.ratings[a[0].id].elo - p.ratings[a[1].id].elo);
+    const diffB = Math.abs(p.ratings[b[0].id].elo - p.ratings[b[1].id].elo);
+    return diffA - diffB;
+  });
+  const top = allPairs.slice(0, Math.min(10, allPairs.length));
+  return top[Math.floor(Math.random() * top.length)];
 }
 
 const MILESTONE_PCTS = [10, 25, 50, 75, 100];
@@ -2206,8 +2232,8 @@ async function loadFloatChat() {
     // Show green ring if anyone else is online (active in last 10 min)
     const currentPlayer = getPlayer();
     const othersOnline = [...recentPlayers].filter(p => p !== currentPlayer);
-    const ring = document.getElementById('chat-online-ring');
-    if (ring) ring.style.display = othersOnline.length > 0 ? 'block' : 'none';
+    const btn = document.getElementById('float-chat-btn');
+    if (btn) btn.classList.toggle('others-online', othersOnline.length > 0);
 
     const el = document.getElementById('float-chat-messages');
     if (!el) return;
