@@ -2109,14 +2109,18 @@ async function renderArcade() {
   games.forEach(g => {
     const topScores = (scores[g.id] || []).slice(0, 3);
     const myBest = (scores[g.id] || []).filter(s => s.player === player)[0];
-    html += `<div class="arcade-card" onclick="startArcadeGame('${g.id}')">
-      <div class="arcade-card-icon">${g.icon}</div>
-      <div class="arcade-card-title">${g.title}</div>
-      <div class="arcade-card-desc">${g.desc}</div>
-      ${myBest ? `<div style="font-size:11px;color:#c8a040;margin-top:4px">Your best: ${myBest.score} pts</div>` : ''}
-      ${topScores.length > 0 ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
-        ${topScores.map((s,i)=>`<span class="arcade-score-pill" style="background:${PLAYER_COLORS[s.player]||'#333'}22;color:${PLAYER_COLORS[s.player]||'#aaa'};border:1px solid ${PLAYER_COLORS[s.player]||'#444'}44">${['🥇','🥈','🥉'][i]} ${s.player}: ${s.score}</span>`).join('')}
-      </div>` : ''}
+    html += `<div class="arcade-card" onclick="startArcadeGame('${g.id}')" style="justify-content:space-between">
+      <div>
+        <div class="arcade-card-icon">${g.icon}</div>
+        <div class="arcade-card-title">${g.title}</div>
+        <div class="arcade-card-desc">${g.desc}</div>
+      </div>
+      <div style="margin-top:auto;padding-top:10px">
+        ${myBest ? `<div style="font-size:11px;color:#c8a040;margin-bottom:6px">Your best: ${myBest.score} pts</div>` : '<div style="height:17px;margin-bottom:6px"></div>'}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;min-height:22px">
+          ${topScores.map((s,i)=>`<span class="arcade-score-pill" style="background:${PLAYER_COLORS[s.player]||'#333'}22;color:${PLAYER_COLORS[s.player]||'#aaa'};border:1px solid ${PLAYER_COLORS[s.player]||'#444'}44">${['🥇','🥈','🥉'][i]} ${s.player}: ${s.score}</span>`).join('')}
+        </div>
+      </div>
     </div>`;
   });
   html += '</div>';
