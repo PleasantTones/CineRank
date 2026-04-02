@@ -665,12 +665,13 @@ async function loadFromDB() {
       setupIndex = decidedIds.size >= MOVIES.length ? MOVIES.length :
         (() => { const i = MOVIES.findIndex(m => !decidedIds.has(m.id)); return i === -1 ? MOVIES.length : i; })();
 
-      // Load played pairs for this player
-      fetchPlayerMatchups(last).then(rows => {
-        if (rows && rows.length > 0) {
-          state.players[last].playedPairs = rows.map(r => pairKey(r.movie_a, r.movie_b));
+      // Load played pairs for this player - await so renderMatchup has correct data
+      try {
+        const matchupRows = await fetchPlayerMatchups(last);
+        if (matchupRows && matchupRows.length > 0) {
+          state.players[last].playedPairs = matchupRows.map(r => pairKey(r.movie_a, r.movie_b));
         }
-      }).catch(()=>{});
+      } catch(e) {}
     }
   } catch(e) {}
 
