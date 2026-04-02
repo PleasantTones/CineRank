@@ -2320,10 +2320,11 @@ const TRIVIA_Q_TEMPLATES = [
     q: `Who directed "${m.title}"?`,
     correct: d.Director.split(',')[0].trim(),
     wrong: () => {
-      const others = MOVIES.filter(x=>x.id!==m.id);
-      const picks = [];
-      while (picks.length < 3) { const r = others[Math.floor(Math.random()*others.length)]; if (!picks.includes(r)) picks.push(r); }
-      return picks.map(x => x._director || 'Unknown Director').filter(x=>x!=='Unknown Director').slice(0,3);
+      const dirPool = ['Christopher Nolan','James Cameron','Steven Spielberg','Denis Villeneuve',
+        'Greta Gerwig','Jordan Peele','Ridley Scott','J.J. Abrams','Rian Johnson','Taika Waititi',
+        'Chloe Zhao','Sam Raimi','David Fincher','Alfonso Cuaron','Guillermo del Toro'];
+      const correctDir = d.Director ? d.Director.split(',')[0].trim() : '';
+      return dirPool.filter(x => x !== correctDir).sort(()=>Math.random()-0.5).slice(0,3);
     }
   } : null,
   (m, d) => d.Year && d.Year !== 'N/A' ? {
@@ -2443,13 +2444,24 @@ function answerTrivia(btn, answer, correct) {
 // ═══════════════════════════════════════════════════════
 // Approximate box office data (millions USD) for our 56 movies
 const BOX_OFFICE_DATA = {
-  'Avatar: Fire and Ash': 690, 'Zootopia 2': 480, 'The Running Man': 52, 'Tron: Ares': 95,
-  'Snow White': 210, 'Wicked: For Good': 320, 'Mission: Impossible': 580, 'Jurassic World Rebirth': 440,
-  'Karate Kid: Legends': 130, 'How to Train Your Dragon': 370, 'Lilo & Stitch': 280, 'Elio': 95,
-  'Thunderbolts': 340, 'Captain America': 410, 'Superman': 520, 'Ballerina': 180,
-  'Bugonia': 28, 'Novocaine': 35, 'Predator: Badlands': 88, 'The Accountant 2': 92,
-  'Final Destination Bloodlines': 105, 'Clift': 42, 'Warfare': 22, 'Sinners': 180,
-  'A Minecraft Movie': 890, 'Until Dawn': 68, 'The Electric State': 0,
+  "Avatar: Fire and Ash": 690, "Zootopia 2": 480, "The Running Man": 52, "Tron: Ares": 95,
+  "One Battle After Another": 45, "Nuremberg": 38, "Marty Supreme": 22, "The Black Phone 2": 120,
+  "Stitch Head": 18, "Five Nights at Freddy's 2": 135, "Waltzing with Brando": 15,
+  "The Smashing Machine": 25, "Truth & Treason": 12, "Anaconda": 42, "Good Boy": 8,
+  "Bugonia": 28, "Wicked: For Good": 420, "Rental Family": 10,
+  "The Strangers: Chapter 2": 35, "Pets on a Train": 20,
+  "Springsteen: Deliver Me from Nowhere": 18, "Predator: Badlands": 88,
+  "The Spongebob Movie: Search for SquarePants": 220, "GOAT": 15,
+  "I Can Only Imagine 2": 32, "Pillion": 8, "Scream 7": 140, "The Bride!": 22,
+  "Ready or Not 2: Here I Come": 45, "The Strangers: Chapter 3": 30,
+  "Cold Storage": 12, "Scarlet": 18, "How to Make a Killing": 10, "undertone": 8,
+  "Project Hail Mary": 95, "Iron Lung": 12, "Dracula": 55, "Psycho Killer": 18,
+  "The Pout-Pout Fish": 15, "The Super Mario Galaxy Movie": 380,
+  "Return to Silent Hill": 28, "Mercy": 22, "Wuthering Heights": 35,
+  "Hoppers": 12, "Michael": 85, "Shelter": 10, "Send Help": 18,
+  "Crime 101": 25, "The Drama": 8, "Normal": 12, "Mother Mary": 20,
+  "Insidious: Bleeding World": 145, "Now You See Me: Now You Don't": 180,
+  "Good Luck, Have Fun, Don't Die": 30, "Lee Cronin's Evil Dead": 95,
 };
 
 async function startBoxOffice() {
