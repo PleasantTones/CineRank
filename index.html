@@ -622,10 +622,15 @@ async function loadFromDB() {
             elo: row.elo, wins: row.wins, losses: row.losses,
             matches: row.matches, unseen: row.unseen
           };
-          if (row.matches > 0) state.players[row.player].matchCount++;
         }
       });
-    PLAYERS.forEach(pl => { if (!state.players[pl].playedPairs) state.players[pl].playedPairs = []; });
+    // Correctly calculate matchCount: sum all matches / 2 (each matchup affects 2 movies)
+    PLAYERS.forEach(pl => {
+      state.players[pl].matchCount = Math.round(
+        MOVIES.reduce((s,m) => s + state.players[pl].ratings[m.id].matches, 0) / 2
+      );
+      if (!state.players[pl].playedPairs) state.players[pl].playedPairs = [];
+    });
     }
     rebuildGlobal();
     // Load played pairs for current player from matchups table
