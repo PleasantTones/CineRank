@@ -665,27 +665,35 @@ async function loadFromDB() {
       setupIndex = decidedIds.size >= MOVIES.length ? MOVIES.length :
         (() => { const i = MOVIES.findIndex(m => !decidedIds.has(m.id)); return i === -1 ? MOVIES.length : i; })();
 
-      // Load played pairs - merge DB + localStorage for reliability
+      // Load played pairs - merge DB + localStorage + ratings reconstruction
       try {
-        // Get from localStorage first (most complete - saved on every vote)
         const lsKey = 'playedPairs_' + last;
         let lsPairs = [];
-        try {
-          lsPairs = JSON.parse(localStorage.getItem(lsKey) || '[]');
-        } catch(e) {}
+        try { lsPairs = JSON.parse(localStorage.getItem(lsKey) || '[]'); } catch(e) {}
 
-        // Also fetch from DB matchups table
+        // Fetch from DB matchups table
         const matchupRows = await fetchPlayerMatchups(last);
         const dbPairs = matchupRows ? matchupRows.map(r => pairKey(r.movie_a, r.movie_b)) : [];
 
-        // Merge both sources - union of all known played pairs
+        // Reconstruct from ratings: if both movies have matches > 0,
+        // and total known pairs < expected matchups, assume pairs were played
+        const votedMovies = MOVIES.filter(m => state.players[last].ratings[m.id].matches > 0);
+        const expectedMatchups = Math.round(MOVIES.reduce((s,m) => s + state.players[last].ratings[m.id].matches, 0) / 2);
         const mergedSet = new Set([...lsPairs, ...dbPairs]);
-        state.players[last].playedPairs = [...mergedSet];
 
-        // Update localStorage with the merged set (fills any gaps)
-        try {
-          localStorage.setItem(lsKey, JSON.stringify(state.players[last].playedPairs));
-        } catch(e) {}
+        // If we're missing pairs (ratings show more matchups than we have pairs for),
+        // reconstruct all pairs between voted-on movies as a conservative fallback
+        if (mergedSet.size < expectedMatchups && votedMovies.length >= 2) {
+          for (let i = 0; i < votedMovies.length; i++) {
+            for (let j = i + 1; j < votedMovies.length; j++) {
+              mergedSet.add(pairKey(votedMovies[i].id, votedMovies[j].id));
+            }
+          }
+        }
+
+        state.players[last].playedPairs = [...mergedSet];
+        // Save back to localStorage
+        try { localStorage.setItem(lsKey, JSON.stringify(state.players[last].playedPairs)); } catch(e) {}
       } catch(e) {}
     }
   } catch(e) {}
