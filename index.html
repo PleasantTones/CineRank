@@ -675,14 +675,11 @@ async function loadFromDB() {
         const matchupRows = await fetchPlayerMatchups(last);
         const dbPairs = matchupRows ? matchupRows.map(r => pairKey(r.movie_a, r.movie_b)) : [];
 
-        // Reconstruct from ratings: if both movies have matches > 0,
-        // and total known pairs < expected matchups, assume pairs were played
+        // Reconstruct from ratings if we're missing pairs
         const votedMovies = MOVIES.filter(m => state.players[last].ratings[m.id].matches > 0);
         const expectedMatchups = Math.round(MOVIES.reduce((s,m) => s + state.players[last].ratings[m.id].matches, 0) / 2);
         const mergedSet = new Set([...lsPairs, ...dbPairs]);
 
-        // If we're missing pairs (ratings show more matchups than we have pairs for),
-        // reconstruct all pairs between voted-on movies as a conservative fallback
         if (mergedSet.size < expectedMatchups && votedMovies.length >= 2) {
           for (let i = 0; i < votedMovies.length; i++) {
             for (let j = i + 1; j < votedMovies.length; j++) {
@@ -692,16 +689,16 @@ async function loadFromDB() {
         }
 
         state.players[last].playedPairs = [...mergedSet];
-        // Save back to localStorage
         try { localStorage.setItem(lsKey, JSON.stringify(state.players[last].playedPairs)); } catch(e) {}
-
-        // Re-render vote screen now that playedPairs are fully loaded
-        if (currentTab === 'vote') renderMatchup();
       } catch(e) {}
     }
   } catch(e) {}
 
   showLoadingOverlay(false);
+
+  // Now render with all data loaded
+  showTab('vote', document.getElementById('tab-btn-vote'));
+  renderMatchup();
 
   // Check if rankings changed since last visit
   try {
@@ -728,29 +725,7 @@ async function loadFromDB() {
     }
   } catch(e) {}
 
-  // Render setup tab with correct state
-  if (currentTab === 'setup') {
-    const currentPlayer = getPlayer();
-    if (!currentPlayer) {
-      // No player selected — show prompt
-      document.getElementById('setup-inner').innerHTML = '<div class="empty-msg" style="padding:3rem 1rem">Select your name above to get started.</div>';
-    } else if (setupIndex >= MOVIES.length) {
-      // Setup done — show ready state with vote button
-      const seenCount = MOVIES.filter(m => !state.players[currentPlayer].ratings[m.id].unseen).length;
-      document.getElementById('setup-inner').innerHTML = `
-        <div style="text-align:center;padding:2rem 1rem;">
-          <div style="font-size:40px;margin-bottom:1rem">🎬</div>
-          <div style="font-size:18px;font-weight:600;color:#f5e6c0;margin-bottom:8px;">Watchlist complete!</div>
-          <div style="font-size:13px;color:#888;margin-bottom:1.5rem;">You've seen <strong style="color:#f0f0f0;font-weight:700">${seenCount}</strong> of ${MOVIES.length} movies</div>
-          <button class="start-voting-btn" onclick="showTab('vote', document.getElementById('tab-btn-vote'));renderMatchup();">Continue Voting →</button>
-          <br/><button class="skip-btn" style="margin-top:0.75rem" onclick="setupIndex=0;renderSetup()">Review watchlist again</button>
-        </div>`;
-    } else {
-      renderSetup();
-    }
-  } else {
-    renderMatchup();
-  }
+  // Don't render yet - wait for playedPairs to load first (done below)
 }
 
 async function saveRowToDb(player, movieId) {
