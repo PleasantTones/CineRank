@@ -177,7 +177,7 @@
   .arcade-btn:hover { background: #ede8d8; transform: translateY(-1px); }
   .arcade-btn-secondary { background: transparent; border: 1px solid #3a3010; color: #777; padding: 10px 24px; border-radius: 10px; font-size: 14px; cursor: pointer; transition: all 0.15s; }
   .arcade-btn-secondary:hover { color: #c8a040; border-color: #6a5a20; }
-  .arcade-poster-blind { width: 120px; height: 180px; object-fit: cover; border-radius: 10px; filter: blur(20px) brightness(0.3); transition: filter 0.5s ease; cursor: pointer; }
+  .arcade-poster-blind { width: 120px; height: 180px; object-fit: cover; border-radius: 10px; filter: blur(10px) brightness(0.6) saturate(0.8); transition: filter 0.5s ease; cursor: pointer; }
   .arcade-poster-blind.revealed { filter: blur(0) brightness(1); }
   .chat-wrap { display: flex; flex-direction: column; height: 380px; background: #111113; border: 1px solid #3a3010; border-radius: 14px; overflow: hidden; }
   .chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -2420,18 +2420,20 @@ function renderTriviaQuestion() {
     </div>
     <img src="${q.img}" style="width:80px;height:120px;object-fit:cover;border-radius:8px;display:block;margin:0.75rem auto;box-shadow:0 4px 16px rgba(0,0,0,0.5)"/>
     <div class="arcade-question">${q.question}</div>
-    <div class="arcade-options">
-      ${q.answers.map(a => `<button class="arcade-option" onclick="answerTrivia(this,'${a.replace(/'/g,"\\'")}','${q.correct.replace(/'/g,"\\'")}')"> ${a}</button>`).join('')}
+    <div class="arcade-options" id="trivia-options">
+      ${q.answers.map((a,i) => `<button class="arcade-option" data-idx="${i}" onclick="answerTrivia(this,${i})">${a}</button>`).join('')}
     </div>
   </div>`;
 }
 
-function answerTrivia(btn, answer, correct) {
-  const isCorrect = answer === correct;
+function answerTrivia(btn, idx) {
+  const q = arcadeState.data[arcadeState.question];
+  const answer = q.answers[idx];
+  const isCorrect = answer === q.correct;
   const allBtns = document.querySelectorAll('.arcade-option');
-  allBtns.forEach(b => {
+  allBtns.forEach((b, i) => {
     b.onclick = null;
-    if (b.textContent.trim() === correct) b.classList.add('reveal');
+    if (q.answers[i] === q.correct) b.classList.add('reveal');
   });
   btn.classList.add(isCorrect ? 'correct' : 'wrong');
   if (isCorrect) arcadeState.score += 100;
@@ -2444,24 +2446,63 @@ function answerTrivia(btn, answer, correct) {
 // ═══════════════════════════════════════════════════════
 // Approximate box office data (millions USD) for our 56 movies
 const BOX_OFFICE_DATA = {
-  "Avatar: Fire and Ash": 690, "Zootopia 2": 480, "The Running Man": 52, "Tron: Ares": 95,
-  "One Battle After Another": 45, "Nuremberg": 38, "Marty Supreme": 22, "The Black Phone 2": 120,
-  "Stitch Head": 18, "Five Nights at Freddy's 2": 135, "Waltzing with Brando": 15,
-  "The Smashing Machine": 25, "Truth & Treason": 12, "Anaconda": 42, "Good Boy": 8,
-  "Bugonia": 28, "Wicked: For Good": 420, "Rental Family": 10,
-  "The Strangers: Chapter 2": 35, "Pets on a Train": 20,
-  "Springsteen: Deliver Me from Nowhere": 18, "Predator: Badlands": 88,
-  "The Spongebob Movie: Search for SquarePants": 220, "GOAT": 15,
-  "I Can Only Imagine 2": 32, "Pillion": 8, "Scream 7": 140, "The Bride!": 22,
-  "Ready or Not 2: Here I Come": 45, "The Strangers: Chapter 3": 30,
-  "Cold Storage": 12, "Scarlet": 18, "How to Make a Killing": 10, "undertone": 8,
-  "Project Hail Mary": 95, "Iron Lung": 12, "Dracula": 55, "Psycho Killer": 18,
-  "The Pout-Pout Fish": 15, "The Super Mario Galaxy Movie": 380,
-  "Return to Silent Hill": 28, "Mercy": 22, "Wuthering Heights": 35,
-  "Hoppers": 12, "Michael": 85, "Shelter": 10, "Send Help": 18,
-  "Crime 101": 25, "The Drama": 8, "Normal": 12, "Mother Mary": 20,
-  "Insidious: Bleeding World": 145, "Now You See Me: Now You Don't": 180,
-  "Good Luck, Have Fun, Don't Die": 30, "Lee Cronin's Evil Dead": 95,
+  // Keyed by movie ID - worldwide gross estimates in millions USD
+  'M0001': 45,   // One Battle After Another
+  'M0002': 38,   // Nuremberg
+  'M0003': 52,   // The Running Man
+  'M0004': 480,  // Zootopia 2
+  'M0005': 22,   // Marty Supreme
+  'M0006': 18,   // Him
+  'M0007': 95,   // Tron: Ares
+  'M0008': 120,  // The Black Phone 2
+  'M0009': 18,   // Stitch Head
+  'M0010': 135,  // Five Nights at Freddy's 2
+  'M0011': 15,   // Waltzing with Brando
+  'M0012': 25,   // The Smashing Machine
+  'M0013': 12,   // Truth & Treason
+  'M0014': 690,  // Avatar: Fire and Ash
+  'M0015': 42,   // Anaconda
+  'M0016': 8,    // Good Boy
+  'M0017': 28,   // Bugonia
+  'M0018': 180,  // Now You See Me: Now You Don't
+  'M0019': 420,  // Wicked: For Good
+  'M0020': 10,   // Rental Family
+  'M0021': 35,   // The Strangers: Chapter 2
+  'M0022': 20,   // Pets on a Train
+  'M0023': 18,   // Springsteen: Deliver Me from Nowhere
+  'M0024': 88,   // Predator: Badlands
+  'M0025': 220,  // The Spongebob Movie
+  'M0026': 15,   // GOAT
+  'M0027': 32,   // I Can Only Imagine 2
+  'M0028': 8,    // Pillion
+  'M0029': 140,  // Scream 7
+  'M0030': 22,   // The Bride!
+  'M0031': 45,   // Ready or Not 2
+  'M0032': 30,   // The Strangers: Chapter 3
+  'M0033': 12,   // Cold Storage
+  'M0034': 18,   // Scarlet
+  'M0035': 10,   // How to Make a Killing
+  'M0036': 8,    // undertone
+  'M0037': 95,   // Project Hail Mary
+  'M0038': 12,   // Iron Lung
+  'M0039': 55,   // Dracula
+  'M0040': 18,   // Psycho Killer
+  'M0041': 15,   // The Pout-Pout Fish
+  'M0042': 380,  // The Super Mario Galaxy Movie
+  'M0043': 95,   // Lee Cronin's Evil Dead
+  'M0044': 28,   // Return to Silent Hill
+  'M0045': 22,   // Mercy
+  'M0046': 35,   // Wuthering Heights
+  'M0047': 30,   // Good Luck, Have Fun, Don't Die
+  'M0048': 12,   // Hoppers
+  'M0049': 85,   // Michael
+  'M0050': 10,   // Shelter
+  'M0051': 18,   // Send Help
+  'M0052': 25,   // Crime 101
+  'M0053': 8,    // The Drama
+  'M0054': 12,   // Normal
+  'M0055': 20,   // Mother Mary
+  'M0056': 145,  // Insidious: Bleeding World
 };
 
 async function startBoxOffice() {
@@ -2527,8 +2568,8 @@ function answerBoxOffice(el, pickedId, otherId) {
   const [a, b] = arcadeState.data[arcadeState.question];
   const pickedMovie = MOVIES.find(m => m.id === pickedId);
   const otherMovie = MOVIES.find(m => m.id === otherId);
-  const pickedBo = BOX_OFFICE_DATA[pickedMovie.title] || 50;
-  const otherBo = BOX_OFFICE_DATA[otherMovie.title] || 50;
+  const pickedBo = BOX_OFFICE_DATA[pickedMovie.id] || 50;
+  const otherBo = BOX_OFFICE_DATA[otherMovie.id] || 50;
   const isCorrect = pickedBo >= otherBo;
   
   el.style.borderColor = isCorrect ? '#4ade80' : '#f87171';
@@ -2576,12 +2617,12 @@ function renderBlindGame() {
     <div id="blind-list" style="display:flex;flex-direction:column;gap:8px">
       ${blindOrder.map((m, i) => `
         <div class="blind-item" data-id="${m.id}" draggable="true"
-          style="display:flex;align-items:center;gap:12px;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:8px 12px;cursor:grab;touch-action:none"
+          style="display:flex;align-items:center;gap:12px;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:8px 12px;cursor:grab;user-select:none"
           ondragstart="blindDragStart(event)" ondragover="blindDragOver(event)" ondrop="blindDrop(event)" ondragend="blindDragEnd(event)">
-          <span style="font-size:18px;color:#555;font-weight:700;width:20px;text-align:center">${i+1}</span>
-          <img src="${m.img}" class="arcade-poster-blind" onclick="blindHint(this)" style="width:50px;height:75px"/>
-          <span style="font-size:13px;color:#555;font-style:italic">Hidden title</span>
-          <span style="margin-left:auto;font-size:18px;color:#3a3020">⠿</span>
+          <span style="font-size:14px;color:#555;font-weight:700;width:20px;text-align:center">${i+1}</span>
+          <img src="${m.img}" class="arcade-poster-blind" onclick="blindHint(this)" style="width:50px;height:75px;flex-shrink:0"/>
+          <span style="font-size:13px;color:#888;font-style:italic;flex:1">Movie ${i+1}</span>
+          <span style="font-size:20px;color:#3a3020;cursor:grab">⠿</span>
         </div>`).join('')}
     </div>
     <div style="display:flex;justify-content:center;margin-top:1.25rem">
@@ -2591,8 +2632,8 @@ function renderBlindGame() {
 }
 
 function blindHint(img) {
-  img.style.filter = 'blur(4px) brightness(0.7)';
-  setTimeout(() => { img.style.filter = 'blur(20px) brightness(0.3)'; }, 1000);
+  img.style.filter = 'blur(2px) brightness(0.9)';
+  setTimeout(() => { img.style.filter = 'blur(10px) brightness(0.6) saturate(0.8)'; }, 1000);
 }
 
 function blindDragStart(e) {
@@ -2611,9 +2652,9 @@ function blindDragOver(e) {
     const targetIdx = items.indexOf(item);
     if (dragIdx < targetIdx) list.insertBefore(blindDragging, item.nextSibling);
     else list.insertBefore(blindDragging, item);
-    // Update numbers
+    // Update rank numbers (first span in each item)
     [...list.querySelectorAll('.blind-item')].forEach((el, i) => {
-      el.querySelector('span').textContent = i + 1;
+      el.querySelector('span:first-child').textContent = i + 1;
     });
   }
 }
