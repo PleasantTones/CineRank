@@ -1127,7 +1127,10 @@ function markSeen(id) {
   const p=getPData(); if (!p) return;
   const player=getPlayer();
   p.ratings[id].unseen=false;
+  // Remove any playedPairs involving this movie so it gets fresh matchups against all seen movies
+  p.playedPairs = (p.playedPairs || []).filter(key => !key.includes(id));
   renderMyMovies();
+  renderMatchup();
   saveRowToDb(player, id);
 }
 
@@ -1449,8 +1452,13 @@ function toggleSeen(id, markAsSeen) {
   const p=getPData(); if (!p) return;
   const player=getPlayer();
   p.ratings[id].unseen = !markAsSeen;
+  if (markAsSeen) {
+    // Remove any playedPairs involving this movie so it gets fresh matchups against all seen movies
+    p.playedPairs = (p.playedPairs || []).filter(key => !key.includes(id));
+  }
   saveRowToDb(player, id);
   renderMyMovies();
+  renderMatchup();
 }
 function pairKey(idA, idB) {
   return [idA, idB].sort().join('|');
