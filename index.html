@@ -1539,8 +1539,16 @@ function renderMatchup() {
   const unseenCount=MOVIES.filter(m=>p.ratings[m.id].unseen).length;
   const seenCount=MOVIES.length-unseenCount;
   const totalUniquePairs = seenCount*(seenCount-1)/2;
-  const remainingPairs = Math.max(0, totalUniquePairs - p.matchCount);
-  const pct = totalUniquePairs > 0 ? Math.min(100, Math.round((p.matchCount/totalUniquePairs)*100)) : 0;
+  // Count actual unplayed pairs — derived from playedPairs not matchCount,
+  // so it stays accurate when new movies are marked seen mid-session
+  const playedSet = new Set(p.playedPairs || []);
+  const pool = MOVIES.filter(m => !p.ratings[m.id].unseen);
+  let unplayedCount = 0;
+  for (let i = 0; i < pool.length; i++)
+    for (let j = i+1; j < pool.length; j++)
+      if (!playedSet.has(pairKey(pool[i].id, pool[j].id))) unplayedCount++;
+  const remainingPairs = unplayedCount;
+  const pct = totalUniquePairs > 0 ? Math.min(100, Math.round(((totalUniquePairs - remainingPairs)/totalUniquePairs)*100)) : 0;
 
   // Agreement rate: does my #1 match the group #1?
   const myTopMovie = MOVIES.filter(m=>!p.ratings[m.id].unseen&&p.ratings[m.id].matches>0)
