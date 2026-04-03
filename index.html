@@ -2401,13 +2401,17 @@ function runnerChangeLane(dir) {
   runnerState.targetLane = Math.max(0, Math.min(2, runnerState.targetLane + dir));
 }
 
-function runnerLoop() {
+function runnerLoop(timestamp) {
   if (!window.runnerGameActive) return;
   const canvas = document.getElementById('runner-canvas');
   if (!canvas) { window.runnerGameActive = false; return; }
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const s = runnerState;
+  // Delta time normalization - target 60fps, scale for slower devices
+  const now = timestamp || performance.now();
+  const dt = Math.min(2.5, s.lastTime ? (now - s.lastTime) / (1000/60) : 1);
+  s.lastTime = now;
 
   if (s.gameOver) {
     window.runnerGameActive = false;
@@ -2428,7 +2432,7 @@ function runnerLoop() {
     return;
   }
 
-  s.frame++;
+  s.frame += dt;
   s.score = Math.floor(s.frame / 8);
   s.speed = Math.min(2.2, 1 + s.score * 0.005);
 
@@ -2524,7 +2528,7 @@ function runnerLoop() {
 
   // === DRAW & UPDATE OBSTACLES ===
   s.obstacles = s.obstacles.filter(ob => {
-    ob.z += s.speed * 0.005;
+    ob.z += s.speed * 0.005 * dt;
     if (ob.z > 1.3) return false;
 
     const t = ob.z; // 0=far, 1=near
@@ -2636,7 +2640,7 @@ function runnerLoop() {
     s.hearts.push({ lane, z: 0, collected: false });
   }
   s.hearts = s.hearts.filter(h => {
-    h.z += s.speed * 0.005;
+    h.z += s.speed * 0.005 * dt;
     if (h.z > 1.2 || h.collected) return false;
     const t = h.z;
     const posY = vy + (H - vy) * t;
@@ -2698,7 +2702,7 @@ function startMemory() {
 
   memoryState = {
     cards, flipped: [], matches: 0, moves: 0,
-    timeLeft: 90, timer: null, score: 0, started: false
+    timeLeft: 30, timer: null, score: 0, started: false
   };
 
   renderMemory();
@@ -2884,13 +2888,16 @@ function catchStart() {
   catchLoop();
 }
 
-function catchLoop() {
+function catchLoop(timestamp) {
   if (!window.catchGameActive) return;
   const canvas = document.getElementById('catch-canvas');
   if (!canvas) { window.catchGameActive = false; return; }
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const s = catchState;
+  const now = timestamp || performance.now();
+  const dt = Math.min(2.5, s.lastTime ? (now - s.lastTime) / (1000/60) : 1);
+  s.lastTime = now;
 
   if (s.gameOver) {
     window.catchGameActive = false;
@@ -2911,12 +2918,12 @@ function catchLoop() {
     return;
   }
 
-  s.frame++;
+  s.frame += dt;
   s.speed = Math.min(6.0, 1.4 + s.frame * 0.002);
   // Continuous movement when key held
   if (catchKeysHeld.left) s.targetX = Math.max(60, s.basketX - 12);
   if (catchKeysHeld.right) s.targetX = Math.min(W - 60, s.basketX + 12);
-  s.basketX += (s.targetX - s.basketX) * Math.min(0.6, 0.35 + s.speed * 0.08);
+  s.basketX += (s.targetX - s.basketX) * Math.min(0.8, (0.35 + s.speed * 0.08) * dt);
   s.basketX = Math.max(60, Math.min(W - 60, s.basketX));
 
   // Spawn poster
@@ -2966,7 +2973,7 @@ function catchLoop() {
     // Already resolved - remove
     if (p.done) return false;
 
-    p.y += s.speed;
+    p.y += s.speed * dt;
     const pW = 55, pH = 80;
 
     // Fell off screen - only remove when fully past canvas, catch check handles the rest
