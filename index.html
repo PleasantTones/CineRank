@@ -2098,9 +2098,9 @@ async function renderArcade() {
   } catch(e) {}
 
   const games = [
-    { id: 'trivia', icon: '🎬', title: 'Movie Trivia', desc: 'Test your knowledge — director, year, cast. 10 questions, beat the clock.' },
-    { id: 'boxoffice', icon: '💰', title: 'Box Office Showdown', desc: 'Which movie made more money? Guess the bigger hit from the 56 films.' },
-    { id: 'blind', icon: '👁️', title: 'Blind Ranking', desc: 'Rank 5 blurred posters. Titles revealed after — how close were you?' },
+    { id: 'runner', icon: '🏃', title: 'Cinema Runner', desc: 'Sprint through the cinema hallway dodging movie posters jutting out from both walls. How far can you run?' },
+    { id: 'memory', icon: '🎭', title: 'Memory Match', desc: 'Flip and match movie poster pairs before the clock runs out. 6 pairs, 90 seconds.' },
+    { id: 'catch', icon: '🎪', title: 'Poster Catch', desc: 'Posters rain down — catch only the ones that match the prompt! Dodge the rest or lose a life.' },
   ];
 
   let html = `<div class="section-label">Pick a game</div>
@@ -2128,12 +2128,12 @@ async function renderArcade() {
   // ── ARCADE LEADERBOARDS ──
   html += `<div class="section-label" style="margin-top:1.5rem">Arcade leaderboards</div>`;
 
-  const gameLabels = { trivia: '🎬 Movie Trivia', boxoffice: '💰 Box Office Showdown', blind: '👁️ Blind Ranking' };
-  const maxPts = { trivia: 1000, boxoffice: 1000, blind: 500 };
+  const gameLabels = { runner: '🏃 Cinema Runner', memory: '🎭 Memory Match', catch: '🎪 Poster Catch' };
+  const maxPts = { runner: 500, memory: 1000, catch: 25 };
 
   html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:stretch">`;
 
-  ['trivia','boxoffice','blind'].forEach(gameId => {
+  ['runner','memory','catch'].forEach(gameId => {
     const gameScores = (scores[gameId] || []).sort((a,b) => b.score - a.score);
     const max = maxPts[gameId];
     html += `<div style="background:#111113;border:1px solid #3a3010;border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
@@ -2291,13 +2291,17 @@ async function sendChat() { return sendFloatChat(); }
 function startArcadeGame(gameId) {
   if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
   arcadeState = { game: gameId, score: 0, question: 0, total: 10, answers: [], data: [] };
-  if (gameId === 'trivia') startTrivia();
-  if (gameId === 'boxoffice') startBoxOffice();
-  if (gameId === 'blind') startBlind();
+  if (gameId === 'runner') startRunner();
+  if (gameId === 'memory') startMemory();
+  if (gameId === 'catch') startCatch();
 }
 
 function backToArcade() {
   if (chatPollInterval) clearInterval(chatPollInterval);
+  // Stop any running games
+  if (runnerAnimFrame) cancelAnimationFrame(runnerAnimFrame);
+  if (catchAnimFrame) cancelAnimationFrame(catchAnimFrame);
+  runnerAnimFrame = null; catchAnimFrame = null;
   renderArcade();
 }
 
@@ -2305,7 +2309,6 @@ async function saveArcadeScore(game, score) {
   const player = getPlayer(); if (!player) return;
   const id = player + '_' + game;
   try {
-    // Upsert only if new score is higher
     const existing = await sbFetch(`/rest/v1/arcade_scores?id=eq.${encodeURIComponent(id)}&select=score`);
     if (existing && existing.length > 0 && existing[0].score >= score) return;
     await sbFetch('/rest/v1/arcade_scores', {
@@ -2317,416 +2320,749 @@ async function saveArcadeScore(game, score) {
 }
 
 // ═══════════════════════════════════════════════════════
-// GAME 1: MOVIE TRIVIA
+// GAME 1: CINEMA RUNNER
+// Player runs down a hallway, movie posters on left/right walls
+// Dodge posters that stick out, collect popcorn
 // ═══════════════════════════════════════════════════════
-const TRIVIA_Q_TEMPLATES = [
-  (m, d) => d.Director && d.Director !== 'N/A' ? {
-    q: `Who directed "${m.title}"?`,
-    correct: d.Director.split(',')[0].trim(),
-    wrong: () => {
-      const dirPool = ['Christopher Nolan','James Cameron','Steven Spielberg','Denis Villeneuve',
-        'Greta Gerwig','Jordan Peele','Ridley Scott','J.J. Abrams','Rian Johnson','Taika Waititi',
-        'Chloe Zhao','Sam Raimi','David Fincher','Alfonso Cuaron','Guillermo del Toro'];
-      const correctDir = d.Director ? d.Director.split(',')[0].trim() : '';
-      return dirPool.filter(x => x !== correctDir).sort(()=>Math.random()-0.5).slice(0,3);
-    }
-  } : null,
-  (m, d) => d.Year && d.Year !== 'N/A' ? {
-    q: `What year was "${m.title}" released?`,
-    correct: d.Year,
-    wrong: () => {
-      const yr = parseInt(d.Year);
-      const offsets = [-2,-1,1,2,3,-3].sort(()=>Math.random()-0.5).slice(0,3);
-      return offsets.map(o => String(yr + o));
-    }
-  } : null,
-  (m, d) => d.imdbRating && d.imdbRating !== 'N/A' ? {
-    q: `What is the IMDb rating of "${m.title}"?`,
-    correct: d.imdbRating,
-    wrong: () => {
-      const r = parseFloat(d.imdbRating);
-      return [Math.max(1,r-1.2).toFixed(1), Math.min(10,r+0.9).toFixed(1), Math.max(1,r-0.6).toFixed(1)];
-    }
-  } : null,
-  (m, d) => d.Genre && d.Genre !== 'N/A' ? {
-    q: `What genre is "${m.title}"?`,
-    correct: d.Genre.split(',')[0].trim(),
-    wrong: () => ['Action','Comedy','Drama','Horror','Sci-Fi','Thriller','Romance','Animation'].filter(g=>!d.Genre.includes(g)).sort(()=>Math.random()-0.5).slice(0,3)
-  } : null,
-];
+let runnerAnimFrame = null;
 
-async function startTrivia() {
+function startRunner() {
   const el = document.getElementById('arcade-content');
-  el.innerHTML = `<div class="arcade-game"><div style="text-align:center;color:#777;padding:2rem">Loading trivia questions...</div></div>`;
-  
-  // Pick 10 random movies and fetch their OMDB data
-  const pool = [...MOVIES].sort(() => Math.random() - 0.5).slice(0, 20);
-  const questions = [];
-  
-  for (const m of pool) {
-    if (questions.length >= 10) break;
-    try {
-      let d = MOVIE_CACHE[m.id];
-      if (!d) {
-        const imdbId = IMDB_URLS[m.id].match(/tt\d+/)?.[0];
-        if (!imdbId) continue;
-        const res = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_KEY}&i=${imdbId}&plot=short`);
-        d = await res.json();
-        if (d.Response === 'True') MOVIE_CACHE[m.id] = d;
-        else continue;
-      }
-      // Store director for wrong answers
-      m._director = d.Director ? d.Director.split(',')[0].trim() : null;
-      const templates = TRIVIA_Q_TEMPLATES.map(t => t(m, d)).filter(Boolean);
-      if (templates.length === 0) continue;
-      const t = templates[Math.floor(Math.random() * templates.length)];
-      const wrongAnswers = t.wrong();
-      const allAnswers = [t.correct, ...wrongAnswers].sort(() => Math.random() - 0.5);
-      questions.push({ movie: m, question: t.q, correct: t.correct, answers: allAnswers, img: m.img });
-    } catch(e) { continue; }
-  }
-
-  arcadeState.data = questions;
-  arcadeState.total = questions.length;
-  renderTriviaQuestion();
-}
-
-function renderTriviaQuestion() {
-  const el = document.getElementById('arcade-content');
-  const { question, score, total, data } = arcadeState;
-  
-  if (question >= data.length) {
-    saveArcadeScore('trivia', score);
-    el.innerHTML = `<div class="arcade-game" style="text-align:center">
-      <div class="arcade-card-icon" style="font-size:48px;margin-bottom:8px">🎬</div>
-      <div class="arcade-game-title">Trivia Complete!</div>
-      <div class="arcade-score-display">${score}</div>
-      <div class="arcade-score-label">points out of ${total * 100}</div>
-      <div style="margin-top:1rem;color:#777;font-size:13px">${score >= total*80 ? '🌟 Movie genius!' : score >= total*50 ? '👍 Not bad!' : '📚 Keep watching!'}</div>
-      <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
-        <button class="arcade-btn" onclick="startArcadeGame('trivia')">Play again</button>
-        <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+  el.innerHTML = `
+    <div style="background:#0c0c0e;border:1px solid #3a3010;border-radius:14px;overflow:hidden;position:relative">
+      <canvas id="runner-canvas" width="600" height="400" style="display:block;width:100%;max-width:600px;margin:0 auto;cursor:pointer;image-rendering:auto"></canvas>
+      <div id="runner-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.85)">
+        <div style="font-size:32px;margin-bottom:8px">🎬</div>
+        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Cinema Runner</div>
+        <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:260px">Run through the cinema! Dodge movie posters that stick out from the walls.</div>
+        <div style="font-size:12px;color:#555;margin-bottom:16px">Press SPACE or tap to jump</div>
+        <button class="arcade-btn" onclick="runnerStart()">Start Running →</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
       </div>
     </div>`;
-    return;
-  }
-
-  const q = data[question];
-  const pct = Math.round((question / total) * 100);
-  el.innerHTML = `<div class="arcade-game">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
-      <span style="font-size:13px;color:#c8a040;font-weight:700">${score} pts</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <div style="flex:1;height:4px;background:#1e1910;border-radius:99px"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#6a5a20,#c8a040);border-radius:99px;transition:width 0.3s"></div></div>
-      <span style="font-size:11px;color:#555">${question+1}/${total}</span>
-    </div>
-    <img src="${q.img}" style="width:80px;height:120px;object-fit:cover;border-radius:8px;display:block;margin:0.75rem auto;box-shadow:0 4px 16px rgba(0,0,0,0.5)"/>
-    <div class="arcade-question">${q.question}</div>
-    <div class="arcade-options" id="trivia-options">
-      ${q.answers.map((a,i) => `<button class="arcade-option" data-idx="${i}" onclick="answerTrivia(this,${i})">${a}</button>`).join('')}
-    </div>
-  </div>`;
+  setupRunnerCanvas();
 }
 
-function answerTrivia(btn, idx) {
-  const q = arcadeState.data[arcadeState.question];
-  const answer = q.answers[idx];
-  const isCorrect = answer === q.correct;
-  const allBtns = document.querySelectorAll('.arcade-option');
-  allBtns.forEach((b, i) => {
-    b.onclick = null;
-    if (q.answers[i] === q.correct) b.classList.add('reveal');
+function setupRunnerCanvas() {
+  const canvas = document.getElementById('runner-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Draw preview hallway
+  drawHallway(ctx, canvas.width, canvas.height, 0, []);
+
+  canvas.addEventListener('click', () => {
+    if (window.runnerGameActive) runnerJump();
+    else runnerStart();
   });
-  btn.classList.add(isCorrect ? 'correct' : 'wrong');
-  if (isCorrect) arcadeState.score += 100;
-  arcadeState.question++;
-  setTimeout(renderTriviaQuestion, 1200);
+  document.addEventListener('keydown', runnerKeyHandler);
 }
 
-// ═══════════════════════════════════════════════════════
-// GAME 2: BOX OFFICE SHOWDOWN
-// ═══════════════════════════════════════════════════════
-// Approximate box office data (millions USD) for our 56 movies
-const BOX_OFFICE_DATA = {
-  // Keyed by movie ID - worldwide gross estimates in millions USD
-  'M0001': 45,   // One Battle After Another
-  'M0002': 38,   // Nuremberg
-  'M0003': 52,   // The Running Man
-  'M0004': 480,  // Zootopia 2
-  'M0005': 22,   // Marty Supreme
-  'M0006': 18,   // Him
-  'M0007': 95,   // Tron: Ares
-  'M0008': 120,  // The Black Phone 2
-  'M0009': 18,   // Stitch Head
-  'M0010': 135,  // Five Nights at Freddy's 2
-  'M0011': 15,   // Waltzing with Brando
-  'M0012': 25,   // The Smashing Machine
-  'M0013': 12,   // Truth & Treason
-  'M0014': 690,  // Avatar: Fire and Ash
-  'M0015': 42,   // Anaconda
-  'M0016': 8,    // Good Boy
-  'M0017': 28,   // Bugonia
-  'M0018': 180,  // Now You See Me: Now You Don't
-  'M0019': 420,  // Wicked: For Good
-  'M0020': 10,   // Rental Family
-  'M0021': 35,   // The Strangers: Chapter 2
-  'M0022': 20,   // Pets on a Train
-  'M0023': 18,   // Springsteen: Deliver Me from Nowhere
-  'M0024': 88,   // Predator: Badlands
-  'M0025': 220,  // The Spongebob Movie
-  'M0026': 15,   // GOAT
-  'M0027': 32,   // I Can Only Imagine 2
-  'M0028': 8,    // Pillion
-  'M0029': 140,  // Scream 7
-  'M0030': 22,   // The Bride!
-  'M0031': 45,   // Ready or Not 2
-  'M0032': 30,   // The Strangers: Chapter 3
-  'M0033': 12,   // Cold Storage
-  'M0034': 18,   // Scarlet
-  'M0035': 10,   // How to Make a Killing
-  'M0036': 8,    // undertone
-  'M0037': 95,   // Project Hail Mary
-  'M0038': 12,   // Iron Lung
-  'M0039': 55,   // Dracula
-  'M0040': 18,   // Psycho Killer
-  'M0041': 15,   // The Pout-Pout Fish
-  'M0042': 380,  // The Super Mario Galaxy Movie
-  'M0043': 95,   // Lee Cronin's Evil Dead
-  'M0044': 28,   // Return to Silent Hill
-  'M0045': 22,   // Mercy
-  'M0046': 35,   // Wuthering Heights
-  'M0047': 30,   // Good Luck, Have Fun, Don't Die
-  'M0048': 12,   // Hoppers
-  'M0049': 85,   // Michael
-  'M0050': 10,   // Shelter
-  'M0051': 18,   // Send Help
-  'M0052': 25,   // Crime 101
-  'M0053': 8,    // The Drama
-  'M0054': 12,   // Normal
-  'M0055': 20,   // Mother Mary
-  'M0056': 145,  // Insidious: Bleeding World
-};
-
-async function startBoxOffice() {
-  const el = document.getElementById('arcade-content');
-  // Pick pairs of movies
-  const pool = [...MOVIES].sort(() => Math.random() - 0.5);
-  arcadeState.data = [];
-  for (let i = 0; i < pool.length - 1 && arcadeState.data.length < 10; i += 2) {
-    arcadeState.data.push([pool[i], pool[i+1]]);
-  }
-  arcadeState.total = arcadeState.data.length;
-  renderBoxOfficeQuestion();
+function runnerKeyHandler(e) {
+  if (e.code === 'Space') { e.preventDefault(); runnerJump(); }
 }
 
-async function renderBoxOfficeQuestion() {
-  const el = document.getElementById('arcade-content');
-  const { question, score, total, data } = arcadeState;
+let runnerState = {};
 
-  if (question >= data.length) {
-    saveArcadeScore('boxoffice', score);
+function runnerStart() {
+  const overlay = document.getElementById('runner-overlay');
+  if (overlay) overlay.style.display = 'none';
+  const canvas = document.getElementById('runner-canvas');
+  if (!canvas) return;
+
+  // 3 lanes: 0=left, 1=center, 2=right
+  runnerState = {
+    active: true, score: 0, speed: 1, frame: 0,
+    lane: 1,          // current lane (snaps instantly)
+    targetLane: 1,
+    laneXs: [140, 300, 460],
+    playerX: 300,
+    obstacles: [],    // {lane, z, movieId, passed, hit}
+    lives: 3,
+    lastSpawn: 0,
+    gameOver: false,
+    moviePool: [...MOVIES].sort(() => Math.random() - 0.5),
+    movieIdx: 0,
+    imgCache: {},
+  };
+  window.runnerGameActive = true;
+  // Preload images
+  MOVIES.forEach(m => {
+    const img = new Image();
+    img.src = m.img;
+    runnerState.imgCache[m.id] = img;
+  });
+  runnerLoop();
+}
+
+function runnerJump() { /* no jump - just lane switching */ }
+function runnerChangeLane(dir) {
+  if (!window.runnerGameActive || !runnerState.active) return;
+  runnerState.targetLane = Math.max(0, Math.min(2, runnerState.targetLane + dir));
+}
+
+function runnerLoop() {
+  if (!window.runnerGameActive) return;
+  const canvas = document.getElementById('runner-canvas');
+  if (!canvas) { window.runnerGameActive = false; return; }
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const s = runnerState;
+
+  if (s.gameOver) {
+    window.runnerGameActive = false;
+    document.removeEventListener('keydown', runnerKeyHandler);
+    saveArcadeScore('runner', s.score);
+    const el = document.getElementById('arcade-content');
     el.innerHTML = `<div class="arcade-game" style="text-align:center">
-      <div class="arcade-card-icon" style="font-size:48px;margin-bottom:8px">💰</div>
-      <div class="arcade-game-title">Showdown Complete!</div>
-      <div class="arcade-score-display">${score}</div>
-      <div class="arcade-score-label">points</div>
-      <div style="margin-top:1rem;color:#777;font-size:13px">${score >= total*80 ? '💵 Box office oracle!' : score >= total*50 ? '📊 Solid instincts!' : '🎟️ Keep watching!'}</div>
+      <div style="font-size:48px;margin-bottom:8px">🎬</div>
+      <div class="arcade-game-title">Game Over!</div>
+      <div class="arcade-score-display">${s.score}</div>
+      <div class="arcade-score-label">metres run</div>
+      <div style="color:#777;font-size:13px;margin-top:8px">${s.score > 150 ? '🏃 Cinephile sprinter!' : s.score > 80 ? '🎟️ Not bad!' : '🍿 Keep running!'}</div>
       <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
-        <button class="arcade-btn" onclick="startArcadeGame('boxoffice')">Play again</button>
+        <button class="arcade-btn" onclick="startArcadeGame('runner')">Play again</button>
         <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
       </div>
     </div>`;
     return;
   }
 
-  const [a, b] = data[question];
-  const pct = Math.round((question / total) * 100);
-  el.innerHTML = `<div class="arcade-game">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
-      <span style="font-size:13px;color:#c8a040;font-weight:700">${score} pts</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:1rem">
-      <div style="flex:1;height:4px;background:#1e1910;border-radius:99px"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#6a5a20,#c8a040);border-radius:99px;transition:width 0.3s"></div></div>
-      <span style="font-size:11px;color:#555">${question+1}/${total}</span>
-    </div>
-    <div class="arcade-question" style="margin-top:0">Which made more money at the box office?</div>
-    <div style="display:flex;gap:12px;justify-content:center;margin:1rem 0">
-      <div onclick="answerBoxOffice(this,'${a.id}','${b.id}')" style="flex:1;max-width:180px;background:#1a1a1e;border:1px solid #3a3010;border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='#6a5a20';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#3a3010';this.style.transform='translateY(0)'">
-        <img src="${a.img}" style="width:80px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;box-shadow:0 4px 12px rgba(0,0,0,0.5)"/>
-        <div style="font-size:12px;font-weight:600;color:#e0e0e0;line-height:1.3">${a.title}</div>
-      </div>
-      <div style="display:flex;align-items:center;font-size:16px;font-weight:800;color:#c8a040">VS</div>
-      <div onclick="answerBoxOffice(this,'${b.id}','${a.id}')" style="flex:1;max-width:180px;background:#1a1a1e;border:1px solid #3a3010;border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:all 0.15s" onmouseover="this.style.borderColor='#6a5a20';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#3a3010';this.style.transform='translateY(0)'">
-        <img src="${b.img}" style="width:80px;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;box-shadow:0 4px 12px rgba(0,0,0,0.5)"/>
-        <div style="font-size:12px;font-weight:600;color:#e0e0e0;line-height:1.3">${b.title}</div>
-      </div>
-    </div>
-    <div style="text-align:center;font-size:11px;color:#555">Based on worldwide box office gross</div>
-  </div>`;
-}
+  s.frame++;
+  s.score = Math.floor(s.frame / 8);
+  s.speed = Math.min(2.2, 1 + s.score * 0.005);
 
-function answerBoxOffice(el, pickedId, otherId) {
-  const [a, b] = arcadeState.data[arcadeState.question];
-  const pickedMovie = MOVIES.find(m => m.id === pickedId);
-  const otherMovie = MOVIES.find(m => m.id === otherId);
-  const pickedBo = BOX_OFFICE_DATA[pickedMovie.id] || 50;
-  const otherBo = BOX_OFFICE_DATA[otherMovie.id] || 50;
-  const isCorrect = pickedBo >= otherBo;
-  
-  el.style.borderColor = isCorrect ? '#4ade80' : '#f87171';
-  el.style.background = isCorrect ? '#0a2010' : '#200a0a';
-  if (isCorrect) arcadeState.score += 100;
+  // Smooth lane transition
+  if (s.targetLane !== s.lane) {
+    s.lane = s.targetLane;
+    s.targetX = s.laneXs[s.lane];
+  }
+  if (!s.targetX) s.targetX = s.playerX;
+  s.playerX += (s.targetX - s.playerX) * 0.18;
 
-  // Show box office numbers
-  const parent = el.parentElement;
-  const cards = parent.querySelectorAll('[onclick]');
-  cards.forEach(c => { c.onclick = null; c.onmouseover = null; c.onmouseout = null; });
-  
-  const infoDiv = document.createElement('div');
-  infoDiv.style.cssText = 'text-align:center;margin-top:0.75rem;font-size:12px;color:#777;';
-  infoDiv.innerHTML = `${pickedMovie.title}: <strong style="color:#c8a040">$${pickedBo}M</strong> &nbsp;·&nbsp; ${otherMovie.title}: <strong style="color:#c8a040">$${otherBo}M</strong>`;
-  parent.after(infoDiv);
-
-  arcadeState.question++;
-  setTimeout(renderBoxOfficeQuestion, 1500);
-}
-
-// ═══════════════════════════════════════════════════════
-// GAME 3: BLIND RANKING
-// ═══════════════════════════════════════════════════════
-let blindOrder = [];
-let blindDragging = null;
-
-function startBlind() {
-  const pool = [...MOVIES].sort(() => Math.random() - 0.5).slice(0, 5);
-  arcadeState.data = pool;
-  blindOrder = [...pool];
-  renderBlindGame();
-}
-
-function renderBlindGame() {
-  const el = document.getElementById('arcade-content');
-  const { data } = arcadeState;
-  
-  el.innerHTML = `<div class="arcade-game">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
-      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
-      <span style="font-size:12px;color:#777">Drag to rank</span>
-    </div>
-    <div class="arcade-question" style="margin-top:0;font-size:14px">Rank these blurred posters #1 (best) to #5 (worst)</div>
-    <div style="font-size:11px;color:#555;text-align:center;margin-bottom:1rem">Tap any poster to get a 1-second hint</div>
-    <div id="blind-list" style="display:flex;flex-direction:column;gap:8px">
-      ${blindOrder.map((m, i) => `
-        <div class="blind-item" data-id="${m.id}" draggable="true"
-          style="display:flex;align-items:center;gap:12px;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:8px 12px;cursor:grab;user-select:none"
-          ondragstart="blindDragStart(event)" ondragover="blindDragOver(event)" ondrop="blindDrop(event)" ondragend="blindDragEnd(event)">
-          <span style="font-size:14px;color:#555;font-weight:700;width:20px;text-align:center">${i+1}</span>
-          <img src="${m.img}" class="arcade-poster-blind" onclick="blindHint(this)" style="width:50px;height:75px;flex-shrink:0"/>
-          <span style="font-size:13px;color:#888;font-style:italic;flex:1">Movie ${i+1}</span>
-          <span style="font-size:20px;color:#3a3020;cursor:grab">⠿</span>
-        </div>`).join('')}
-    </div>
-    <div style="display:flex;justify-content:center;margin-top:1.25rem">
-      <button class="arcade-btn" onclick="revealBlind()">Reveal & Score →</button>
-    </div>
-  </div>`;
-}
-
-function blindHint(img) {
-  img.style.filter = 'blur(2px) brightness(0.9)';
-  setTimeout(() => { img.style.filter = 'blur(10px) brightness(0.6) saturate(0.8)'; }, 1000);
-}
-
-function blindDragStart(e) {
-  blindDragging = e.currentTarget;
-  e.currentTarget.style.opacity = '0.4';
-  e.dataTransfer.effectAllowed = 'move';
-}
-function blindDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-  const item = e.currentTarget;
-  if (item !== blindDragging && item.classList.contains('blind-item')) {
-    const list = item.parentNode;
-    const items = [...list.querySelectorAll('.blind-item')];
-    const dragIdx = items.indexOf(blindDragging);
-    const targetIdx = items.indexOf(item);
-    if (dragIdx < targetIdx) list.insertBefore(blindDragging, item.nextSibling);
-    else list.insertBefore(blindDragging, item);
-    // Update rank numbers (first span in each item)
-    [...list.querySelectorAll('.blind-item')].forEach((el, i) => {
-      el.querySelector('span:first-child').textContent = i + 1;
+  // === SPAWN OBSTACLES ===
+  // Obstacles block a lane completely - player MUST switch to another lane
+  // Keep consistent gap regardless of speed - interval shrinks with speed so distance stays constant
+  const spawnInterval = Math.max(70, Math.floor(130 / s.speed));
+  if (s.frame - s.lastSpawn > spawnInterval) {
+    s.lastSpawn = s.frame;
+    // Pick a random lane - force player to dodge
+    // Sometimes spawn 2 adjacent lanes so only 1 escape route
+    const blockedLanes = [Math.floor(Math.random() * 3)];
+    if (s.score > 80 && Math.random() < 0.25) {
+      // Double obstacle - blocks 2 lanes, only 1 escape
+      const second = (blockedLanes[0] + (Math.random() < 0.5 ? 1 : 2)) % 3;
+      blockedLanes.push(second);
+    }
+    blockedLanes.forEach(lane => {
+      const m = s.moviePool[s.movieIdx % s.moviePool.length];
+      s.movieIdx++;
+      s.obstacles.push({ lane, z: 0, movieId: m.id, img: s.imgCache[m.id], title: m.title, passed: false, hit: false });
     });
   }
-}
-function blindDrop(e) { e.preventDefault(); }
-function blindDragEnd(e) { e.currentTarget.style.opacity = '1'; }
 
-function revealBlind() {
-  const el = document.getElementById('arcade-content');
-  const list = document.getElementById('blind-list');
-  const items = [...list.querySelectorAll('.blind-item')];
-  const userOrder = items.map(item => MOVIES.find(m => m.id === item.dataset.id));
-  
-  // Compare to actual ELO ranking
-  const player = getPlayer();
-  const p = player ? state.players[player] : null;
-  const actualRanking = [...arcadeState.data].sort((a, b) => {
-    if (p && p.ratings[a.id].matches > 0 && p.ratings[b.id].matches > 0) {
-      return p.ratings[b.id].elo - p.ratings[a.id].elo;
+  // === DRAW HALLWAY ===
+  ctx.fillStyle = '#0a0808';
+  ctx.fillRect(0, 0, W, H);
+
+  const vx = W / 2, vy = H * 0.3;
+
+  // Floor
+  const fg = ctx.createLinearGradient(0, vy, 0, H);
+  fg.addColorStop(0, '#1a1008'); fg.addColorStop(1, '#080604');
+  ctx.fillStyle = fg;
+  ctx.beginPath();
+  ctx.moveTo(0,H); ctx.lineTo(W,H); ctx.lineTo(vx+80,vy); ctx.lineTo(vx-80,vy);
+  ctx.fill();
+
+  // Ceiling
+  const cg = ctx.createLinearGradient(0,0,0,vy);
+  cg.addColorStop(0,'#0a0808'); cg.addColorStop(1,'#140e08');
+  ctx.fillStyle = cg;
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(W,0); ctx.lineTo(vx+80,vy); ctx.lineTo(vx-80,vy);
+  ctx.fill();
+
+  // Left wall
+  ctx.fillStyle = '#111008';
+  ctx.beginPath();
+  ctx.moveTo(0,0); ctx.lineTo(0,H); ctx.lineTo(vx-80,vy); ctx.closePath();
+  ctx.fill();
+
+  // Right wall  
+  ctx.fillStyle = '#111008';
+  ctx.beginPath();
+  ctx.moveTo(W,0); ctx.lineTo(W,H); ctx.lineTo(vx+80,vy); ctx.closePath();
+  ctx.fill();
+
+  // Lane dividers (perspective lines on floor)
+  ctx.strokeStyle = '#2a1a08';
+  ctx.lineWidth = 1;
+  [-1,0,1,2].forEach(i => {
+    const t0 = 0, t1 = 1;
+    const x0 = vx + i * (80/3) * 2;
+    const y0 = vy;
+    const x1 = vx + i * (W/2) * 0.6;
+    const y1 = H;
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke();
+  });
+
+  // Ceiling lights
+  [0.25,0.5,0.75].forEach((t,i) => {
+    const glow = 0.4 + Math.sin(s.frame * 0.04 + i) * 0.15;
+    ctx.fillStyle = `rgba(220,180,80,${glow})`;
+    const lx = vx + (t - 0.5) * 160 * 0.3;
+    const ly = vy * 0.35;
+    ctx.beginPath(); ctx.arc(lx, ly, 5, 0, Math.PI*2); ctx.fill();
+    // Light beam
+    const beamGrad = ctx.createLinearGradient(lx, ly, lx, H*0.5);
+    beamGrad.addColorStop(0, `rgba(220,180,80,0.1)`);
+    beamGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = beamGrad;
+    ctx.fillRect(lx-15, ly, 30, H*0.5);
+  });
+
+  // === DRAW & UPDATE OBSTACLES ===
+  s.obstacles = s.obstacles.filter(ob => {
+    ob.z += s.speed * 0.005;
+    if (ob.z > 1.3) return false;
+
+    const t = ob.z; // 0=far, 1=near
+    const scale = 0.15 + t * 1.1;
+
+    // Lane center in perspective
+    const laneOffset = (ob.lane - 1) * (80 + (W/2-80) * t);
+    const px = vx + laneOffset * 0.7;
+    const py = vy + (H - vy) * t;
+
+    const pW = 70 * scale;
+    const pH = 105 * scale;
+
+    // Draw poster as BLOCK in the lane (floor to head height)
+    if (!ob.hit) {
+      // Dark backing
+      ctx.fillStyle = '#1a0a08';
+      ctx.fillRect(px - pW/2 - 4, py - pH - 4, pW + 8, pH + 8);
+
+      // Poster image
+      if (ob.img && ob.img.complete && ob.img.naturalWidth > 0) {
+        ctx.drawImage(ob.img, px - pW/2, py - pH, pW, pH);
+      } else {
+        ctx.fillStyle = '#3a1a08';
+        ctx.fillRect(px - pW/2, py - pH, pW, pH);
+        ctx.fillStyle = '#c8a040';
+        ctx.font = `${Math.max(8, 14*scale)}px Arial`;
+        ctx.textAlign = 'center';
+        const words = ob.title.split(' ');
+        ctx.fillText(words[0], px, py - pH/2);
+      }
+
+      // Gold frame
+      ctx.strokeStyle = '#c8a040';
+      ctx.lineWidth = Math.max(1, 2 * scale);
+      ctx.strokeRect(px - pW/2, py - pH, pW, pH);
+
+
     }
-    return state.globalRatings[b.id].elo - state.globalRatings[a.id].elo;
+
+    // === COLLISION ===
+    if (t > 0.80 && t < 1.02 && !ob.passed && !ob.hit) {
+      if (s.lane === ob.lane) {
+        ob.hit = true;
+        s.lives--;
+        if (s.lives <= 0) s.gameOver = true;
+        // Hit flash
+        ctx.fillStyle = 'rgba(255,50,50,0.45)';
+        ctx.fillRect(0,0,W,H);
+      } else {
+        ob.passed = true;
+      }
+    }
+
+    return true;
   });
 
-  // Score: 100 pts for each in correct position, 50 for 1 off
-  let score = 0;
-  userOrder.forEach((m, i) => {
-    const actualPos = actualRanking.findIndex(x => x.id === m.id);
-    const diff = Math.abs(i - actualPos);
-    if (diff === 0) score += 100;
-    else if (diff === 1) score += 50;
-  });
-  arcadeState.score = score;
-  saveArcadeScore('blind', score);
+  // === DRAW PLAYER ===
+  const px2 = s.playerX;
+  const py2 = H - 70;
 
-  // Reveal all posters and show results
-  el.innerHTML = `<div class="arcade-game">
-    <div class="arcade-game-title" style="text-align:center;margin-bottom:0.5rem">Revealed! 👁️</div>
-    <div class="arcade-score-display">${score}</div>
-    <div class="arcade-score-label">points (500 max)</div>
-    <div style="display:flex;gap:12px;margin:1.25rem 0;overflow-x:auto;padding-bottom:4px">
-      <div style="flex:1;min-width:120px">
-        <div style="font-size:10px;color:#777;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;text-align:center">Your ranking</div>
-        ${userOrder.map((m,i) => {
-          const actualPos = actualRanking.findIndex(x=>x.id===m.id);
-          const diff = Math.abs(i - actualPos);
-          const col = diff === 0 ? '#4ade80' : diff === 1 ? '#c8a040' : '#f87171';
-          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a1e">
-            <span style="font-size:12px;font-weight:700;color:${col};width:16px">${i+1}</span>
-            <img src="${m.img}" style="width:32px;height:48px;object-fit:cover;border-radius:4px"/>
-            <span style="font-size:11px;color:#ccc;line-height:1.2">${m.title.length>20?m.title.slice(0,19)+'…':m.title}</span>
-            <span style="margin-left:auto;font-size:11px;color:${col}">${diff===0?'✓':diff===1?'~1':'✗'}</span>
-          </div>`;
-        }).join('')}
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.beginPath(); ctx.ellipse(px2, py2+30, 18, 6, 0, 0, Math.PI*2); ctx.fill();
+
+  // Body
+  ctx.fillStyle = '#f5f0e8';
+  ctx.fillRect(px2-9, py2-28, 18, 30);
+  // Head
+  ctx.beginPath(); ctx.arc(px2, py2-36, 11, 0, Math.PI*2);
+  ctx.fillStyle = '#f5c580'; ctx.fill();
+  // Running legs
+  const lp = s.frame * 0.3;
+  ctx.fillStyle = '#888';
+  ctx.fillRect(px2-7, py2+2, 6, 16 + Math.sin(lp)*8);
+  ctx.fillRect(px2+1, py2+2, 6, 16 - Math.sin(lp)*8);
+  // Arms
+  ctx.fillStyle = '#c8a040';
+  ctx.fillRect(px2-14, py2-20, 5, 16 + Math.sin(lp)*5);
+  ctx.fillRect(px2+9, py2-20, 5, 16 - Math.sin(lp)*5);
+
+  // Lane indicators at bottom
+  s.laneXs.forEach((lx, i) => {
+    const isPlayer = i === s.lane;
+    ctx.fillStyle = isPlayer ? 'rgba(200,160,64,0.3)' : 'rgba(255,255,255,0.05)';
+    ctx.fillRect(lx - W*0.14, H - 8, W*0.28, 6);
+    if (isPlayer) {
+      ctx.fillStyle = '#c8a040';
+      ctx.fillRect(lx - 15, H - 8, 30, 6);
+    }
+  });
+
+  // === HUD ===
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0,0,W,38);
+  ctx.fillStyle = '#c8a040';
+  ctx.font = 'bold 14px Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText(`${s.score}m`, 12, 24);
+  ctx.textAlign = 'center';
+  ctx.fillText('← A   D →   dodge the posters!', W/2, 24);
+  ctx.textAlign = 'right';
+  ctx.fillText('❤️'.repeat(Math.max(0,s.lives)), W-12, 24);
+
+  // Draw collectible hearts (extra lives) - spawn every ~400 frames when lives < 3
+  if (!s.hearts) s.hearts = [];
+  if (s.lives < 3 && s.frame > 60 && s.frame % 400 === 0 && Math.random() < 0.65) {
+    const lane = Math.floor(Math.random() * 3);
+    s.hearts.push({ lane, z: 0, collected: false });
+  }
+  s.hearts = s.hearts.filter(h => {
+    h.z += s.speed * 0.005;
+    if (h.z > 1.2 || h.collected) return false;
+    const t = h.z;
+    const posY = vy + (H - vy) * t;
+    const laneOffset = (h.lane - 1) * (80 + (W/2 - 80) * t);
+    const posX = vx + laneOffset * 0.7;
+    const size = Math.max(10, 8 + t * 22);
+    // Pulsing glow
+    ctx.save();
+    ctx.shadowColor = 'rgba(74,222,128,0.8)';
+    ctx.shadowBlur = 10 + Math.sin(s.frame * 0.15) * 5;
+    ctx.font = `${size}px serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('💚', posX, posY - 20);
+    ctx.restore();
+    // Collect: same lane when close
+    if (t > 0.78 && t < 1.02 && h.lane === s.lane && s.lives < 3) {
+      h.collected = true;
+      s.lives = Math.min(3, s.lives + 1);
+      ctx.fillStyle = 'rgba(74,222,128,0.2)';
+      ctx.fillRect(0, 0, W, H);
+    }
+    return true;
+  });
+
+  runnerAnimFrame = requestAnimationFrame(runnerLoop);
+}
+
+
+// Keyboard lane controls
+document.addEventListener('keydown', e => {
+  if (!window.runnerGameActive) return;
+  if (e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') runnerChangeLane(-1);
+  if (e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') runnerChangeLane(1);
+});
+
+// Touch swipe for runner
+let runnerTouchX = 0;
+document.addEventListener('touchstart', e => { runnerTouchX = e.touches[0].clientX; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (!window.runnerGameActive) return;
+  const dx = e.changedTouches[0].clientX - runnerTouchX;
+  if (Math.abs(dx) > 30) runnerChangeLane(dx > 0 ? 1 : -1);
+  else runnerJump();
+}, { passive: true });
+
+// ═══════════════════════════════════════════════════════
+// GAME 2: MEMORY MATCH
+// Flip poster pairs, find all matches before time runs out
+// ═══════════════════════════════════════════════════════
+let memoryState = {};
+
+function startMemory() {
+  const el = document.getElementById('arcade-content');
+  // Pick 6 movies, make pairs = 12 cards
+  const chosen = [...MOVIES].sort(() => Math.random() - 0.5).slice(0, 6);
+  const cards = [...chosen, ...chosen]
+    .sort(() => Math.random() - 0.5)
+    .map((m, i) => ({ id: i, movieId: m.id, img: m.img, title: m.title, flipped: false, matched: false }));
+
+  memoryState = {
+    cards, flipped: [], matches: 0, moves: 0,
+    timeLeft: 90, timer: null, score: 0, started: false
+  };
+
+  renderMemory();
+  memoryState.timer = setInterval(() => {
+    memoryState.timeLeft--;
+    const el = document.getElementById('memory-timer');
+    if (el) {
+      el.textContent = memoryState.timeLeft + 's';
+      el.style.color = memoryState.timeLeft < 20 ? '#f87171' : '#c8a040';
+    }
+    if (memoryState.timeLeft <= 0) {
+      clearInterval(memoryState.timer);
+      endMemory(false);
+    }
+  }, 1000);
+}
+
+function renderMemory() {
+  const el = document.getElementById('arcade-content');
+  const { cards, timeLeft, moves, matches } = memoryState;
+  el.innerHTML = `
+    <div class="arcade-game">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <button class="arcade-btn-secondary" onclick="clearInterval(memoryState.timer);backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
+        <div style="display:flex;gap:16px;align-items:center">
+          <span style="font-size:13px;color:#777">${matches}/6 matched</span>
+          <span style="font-size:13px;color:#777">${moves} moves</span>
+          <span id="memory-timer" style="font-size:16px;font-weight:700;color:#c8a040">${timeLeft}s</span>
+        </div>
       </div>
-      <div style="flex:1;min-width:120px">
-        <div style="font-size:10px;color:#777;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;text-align:center">Actual ranking</div>
-        ${actualRanking.map((m,i) => `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #1a1a1e">
-          <span style="font-size:12px;font-weight:700;color:#c8a040;width:16px">${i+1}</span>
-          <img src="${m.img}" style="width:32px;height:48px;object-fit:cover;border-radius:4px"/>
-          <span style="font-size:11px;color:#ccc;line-height:1.2">${m.title.length>20?m.title.slice(0,19)+'…':m.title}</span>
-        </div>`).join('')}
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px" id="memory-grid">
+        ${cards.map((c, i) => `
+          <div onclick="flipCard(${i})" style="aspect-ratio:2/3;border-radius:8px;cursor:pointer;position:relative;transition:transform 0.3s;transform-style:preserve-3d;${c.matched?'opacity:0.5;pointer-events:none':''}">
+            ${c.flipped || c.matched
+              ? `<img src="${c.img}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;border:2px solid ${c.matched?'#4ade80':'#c8a040'};display:block"/>`
+              : `<div style="width:100%;height:100%;background:#1a1a1e;border-radius:8px;border:1px solid #3a3010;display:flex;align-items:center;justify-content:center;font-size:28px">🎬</div>`
+            }
+          </div>`).join('')}
       </div>
-    </div>
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:1rem">
-      <button class="arcade-btn" onclick="startArcadeGame('blind')">Play again</button>
+    </div>`;
+}
+
+function flipCard(idx) {
+  const s = memoryState;
+  const c = s.cards[idx];
+  if (c.flipped || c.matched || s.flipped.length >= 2) return;
+  c.flipped = true;
+  s.flipped.push(idx);
+  s.moves++;
+  renderMemory();
+
+  if (s.flipped.length === 2) {
+    const [a, b] = s.flipped;
+    if (s.cards[a].movieId === s.cards[b].movieId) {
+      s.cards[a].matched = s.cards[b].matched = true;
+      s.matches++;
+      s.score += 100 + s.timeLeft;
+      s.flipped = [];
+      renderMemory();
+      if (s.matches === 6) { clearInterval(s.timer); setTimeout(() => endMemory(true), 400); }
+    } else {
+      setTimeout(() => {
+        s.cards[a].flipped = s.cards[b].flipped = false;
+        s.flipped = [];
+        renderMemory();
+      }, 900);
+    }
+  }
+}
+
+function endMemory(won) {
+  saveArcadeScore('memory', memoryState.score);
+  const el = document.getElementById('arcade-content');
+  el.innerHTML = `<div class="arcade-game" style="text-align:center">
+    <div style="font-size:48px;margin-bottom:8px">${won ? '🎉' : '⏰'}</div>
+    <div class="arcade-game-title">${won ? 'All matched!' : 'Time\'s up!'}</div>
+    <div class="arcade-score-display">${memoryState.score}</div>
+    <div class="arcade-score-label">points · ${memoryState.moves} moves · ${memoryState.matches}/6 pairs found</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
+      <button class="arcade-btn" onclick="startArcadeGame('memory')">Play again</button>
       <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
     </div>
   </div>`;
 }
+
+// ═══════════════════════════════════════════════════════
+// GAME 3: POSTER CATCH
+// Posters fall from the sky. Catch ones matching the prompt, dodge others.
+// ═══════════════════════════════════════════════════════
+let catchAnimFrame = null;
+
+function startCatch() {
+  const el = document.getElementById('arcade-content');
+  el.innerHTML = `
+    <div style="background:#0c0c0e;border:1px solid #3a3010;border-radius:14px;overflow:hidden;position:relative">
+      <canvas id="catch-canvas" width="600" height="420" style="display:block;width:100%;max-width:600px;margin:0 auto;cursor:pointer"></canvas>
+      <div id="catch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
+        <div style="font-size:32px;margin-bottom:8px">🎪</div>
+        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Poster Catch</div>
+        <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:280px">Catch the movie posters that match the prompt! Move your basket left and right.</div>
+        <div style="font-size:12px;color:#555;margin-bottom:16px">← → arrow keys or tap left/right sides</div>
+        <button class="arcade-btn" onclick="catchStart()">Start Catching →</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+      </div>
+    </div>`;
+  setupCatchCanvas();
+}
+
+function setupCatchCanvas() {
+  const canvas = document.getElementById('catch-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0c0c0e';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#c8a040';
+  ctx.font = 'bold 20px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('🎪 Poster Catch', canvas.width/2, canvas.height/2);
+
+  canvas.addEventListener('click', e => {
+    if (!window.catchGameActive) { catchStart(); return; }
+  });
+  canvas.addEventListener('touchstart', e => {
+    if (!window.catchGameActive) { catchStart(); return; }
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches[0].clientX - rect.left) * (canvas.width / rect.width);
+    if (x < canvas.width / 2) catchKeysHeld.left = true;
+    else catchKeysHeld.right = true;
+  }, { passive: false });
+  canvas.addEventListener('touchend', e => {
+    catchKeysHeld.left = false; catchKeysHeld.right = false;
+  }, { passive: true });
+  canvas.addEventListener('mousemove', e => {
+    if (!window.catchGameActive) return;
+    const rect = canvas.getBoundingClientRect();
+    catchState.targetX = (e.clientX - rect.left) * (canvas.width / rect.width);
+  });
+  document.addEventListener('keydown', catchKeyHandler);
+}
+
+let catchState = {};
+
+const catchKeysHeld = { left: false, right: false };
+
+function catchKeyHandler(e) {
+  if (!window.catchGameActive) return;
+  if (e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { catchKeysHeld.left = true; catchKeysHeld.right = false; }
+  if (e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') { catchKeysHeld.right = true; catchKeysHeld.left = false; }
+}
+
+document.addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft' || e.key === 'a' || e.key === 'A') catchKeysHeld.left = false;
+  if (e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') catchKeysHeld.right = false;
+});
+
+// Movie categories for the prompt
+const CATCH_PROMPTS = [
+  { label: 'Animated movies', check: m => ['Zootopia 2','The Spongebob Movie: Search for SquarePants','The Super Mario Galaxy Movie','Stitch Head','Elio','The Pout-Pout Fish'].includes(m.title) },
+  { label: 'Horror movies', check: m => ['The Black Phone 2','Scream 7','Five Nights at Freddy\'s 2','Insidious: Bleeding World','Return to Silent Hill','Ready or Not 2: Here I Come'].includes(m.title) },
+  { label: 'Sequels (has a number)', check: m => /\d/.test(m.title) },
+  { label: 'Based on true stories', check: m => ['Nuremberg','The Smashing Machine','Waltzing with Brando','Michael','Springsteen: Deliver Me from Nowhere','Warfare'].includes(m.title) },
+  { label: 'Movies with a colon (:)', check: m => m.title.includes(':') },
+  { label: 'One-word titles', check: m => m.title.trim().split(' ').length === 1 },
+];
+
+function catchStart() {
+  const overlay = document.getElementById('catch-overlay');
+  if (overlay) overlay.style.display = 'none';
+  const canvas = document.getElementById('catch-canvas');
+  if (!canvas) return;
+
+  const prompt = CATCH_PROMPTS[Math.floor(Math.random() * CATCH_PROMPTS.length)];
+  catchState = {
+    active: true, score: 0, lives: 3, frame: 0,
+    basketX: 300, targetX: 300,
+    posters: [],
+    speed: 2, prompt,
+    gameOver: false,
+    lastSpawn: 0,
+  };
+  window.catchGameActive = true;
+  catchLoop();
+}
+
+function catchLoop() {
+  if (!window.catchGameActive) return;
+  const canvas = document.getElementById('catch-canvas');
+  if (!canvas) { window.catchGameActive = false; return; }
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const s = catchState;
+
+  if (s.gameOver) {
+    window.catchGameActive = false;
+    document.removeEventListener('keydown', catchKeyHandler);
+    saveArcadeScore('catch', s.score);
+    const el = document.getElementById('arcade-content');
+    el.innerHTML = `<div class="arcade-game" style="text-align:center">
+      <div style="font-size:48px;margin-bottom:8px">🎪</div>
+      <div class="arcade-game-title">Game Over!</div>
+      <div class="arcade-score-display">${s.score}</div>
+      <div class="arcade-score-label">posters caught</div>
+      <div style="margin-top:1rem;color:#777;font-size:13px">${s.score > 15 ? '🏆 Film archivist!' : s.score > 8 ? '🎬 Good eye!' : '🍿 Keep practicing!'}</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
+        <button class="arcade-btn" onclick="startArcadeGame('catch')">Play again</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  s.frame++;
+  s.speed = Math.min(6.0, 1.4 + s.frame * 0.002);
+  // Continuous movement when key held
+  if (catchKeysHeld.left) s.targetX = Math.max(60, s.basketX - 12);
+  if (catchKeysHeld.right) s.targetX = Math.min(W - 60, s.basketX + 12);
+  s.basketX += (s.targetX - s.basketX) * Math.min(0.6, 0.35 + s.speed * 0.08);
+  s.basketX = Math.max(60, Math.min(W - 60, s.basketX));
+
+  // Spawn poster
+  if (s.frame - s.lastSpawn > Math.max(50, Math.floor(130 / s.speed))) {
+    s.lastSpawn = s.frame;
+    // 60% chance of spawning a target poster to keep game fair
+    let m, isTarget;
+    const forceTarget = Math.random() < 0.6;
+    if (forceTarget) {
+      // Pick a random target movie
+      const targets = MOVIES.filter(mv => s.prompt.check(mv));
+      m = targets.length > 0 ? targets[Math.floor(Math.random() * targets.length)] : MOVIES[Math.floor(Math.random() * MOVIES.length)];
+      isTarget = true;
+    } else {
+      // Pick a non-target
+      const nonTargets = MOVIES.filter(mv => !s.prompt.check(mv));
+      m = nonTargets.length > 0 ? nonTargets[Math.floor(Math.random() * nonTargets.length)] : MOVIES[Math.floor(Math.random() * MOVIES.length)];
+      isTarget = false;
+    }
+    s.posters.push({ x: 60 + Math.random() * (W - 120), y: -120, movie: m, isTarget, scored: false });
+  }
+
+  // Spawn a life heart occasionally when lives < 5
+  if (!s.hearts) s.hearts = [];
+  if (s.lives < 5 && s.frame > 200 && s.frame % 600 === 0 && Math.random() < 0.5) {
+    s.hearts.push({ x: 80 + Math.random() * (W - 160), y: -60, done: false });
+  }
+
+  // Draw background
+  ctx.fillStyle = '#0c0c0e';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw prompt banner
+  ctx.fillStyle = 'rgba(200,160,64,0.15)';
+  ctx.fillRect(0, 0, W, 50);
+  ctx.fillStyle = '#c8a040';
+  ctx.font = 'bold 13px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText(`Catch: ${s.prompt.label}`, W/2, 22);
+  ctx.fillStyle = '#555';
+  ctx.font = '11px Arial';
+  ctx.fillText('Non-matching posters pass harmlessly through', W/2, 40);
+
+  // Draw and update posters
+  const bW = 120, bH = 16;
+  s.posters = s.posters.filter(p => {
+    // Already resolved - remove
+    if (p.done) return false;
+
+    p.y += s.speed;
+    const pW = 55, pH = 80;
+
+    // Fell off screen - only remove when fully past canvas, catch check handles the rest
+    if (p.y > H + pH + 10) {
+      if (p.isTarget && !p.done) { s.lives--; if (s.lives <= 0) s.gameOver = true; }
+      return false;
+    }
+
+    // Draw poster
+    ctx.save();
+    ctx.shadowColor = p.isTarget ? '#4ade80' : '#f87171';
+    ctx.shadowBlur = p.isTarget ? 8 : 6;
+    if (p.cachedImg && p.cachedImg.complete && p.cachedImg.naturalWidth > 0) {
+      ctx.drawImage(p.cachedImg, p.x - pW/2, p.y, pW, pH);
+    } else {
+      if (!p.cachedImg) { p.cachedImg = new Image(); p.cachedImg.src = p.movie.img; }
+      ctx.fillStyle = p.isTarget ? '#0a2010' : '#200a0a';
+      ctx.fillRect(p.x - pW/2, p.y, pW, pH);
+    }
+    ctx.restore();
+    ctx.strokeStyle = p.isTarget ? '#4ade80' : '#f87171';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(p.x - pW/2, p.y, pW, pH);
+
+    // Catch check - use basket zone (top 60px from basket position)
+    const basketTop = H - 55;
+    const basketBottom = H - 10;
+    // Check if any part of poster overlaps basket zone
+    const inYRange = p.y + pH >= basketTop && p.y <= basketBottom;
+    const inXRange = Math.abs(p.x - s.basketX) < bW / 2 + pW / 2;
+
+    if (inYRange && inXRange) {
+      p.done = true;
+      if (p.isTarget) {
+        s.score++;
+        ctx.fillStyle = 'rgba(74,222,128,0.25)';
+        ctx.fillRect(0, 0, W, H);
+      }
+      // Non-targets pass harmlessly through basket - no penalty
+      return false;
+    }
+
+    return true;
+  });
+
+  // Draw and update hearts
+  if (!s.hearts) s.hearts = [];
+  s.hearts = s.hearts.filter(h => {
+    if (h.done) return false;
+    h.y += s.speed * 0.8;
+    if (h.y > H + 20) return false;
+    // Draw pulsing heart
+    const pulse = 1 + Math.sin(s.frame * 0.15) * 0.15;
+    ctx.save();
+    ctx.shadowColor = 'rgba(74,222,128,0.9)';
+    ctx.shadowBlur = 12;
+    ctx.font = `${Math.round(28 * pulse)}px serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('💚', h.x, h.y);
+    ctx.restore();
+    // Collect check
+    const basketTop = H - 55;
+    if (h.y + 20 >= basketTop && h.y <= H - 10 && Math.abs(h.x - s.basketX) < bW / 2 + 20) {
+      h.done = true;
+      s.lives = Math.min(5, s.lives + 1);
+      ctx.fillStyle = 'rgba(74,222,128,0.2)';
+      ctx.fillRect(0, 0, W, H);
+      return false;
+    }
+    return true;
+  });
+
+  // Draw basket
+  ctx.fillStyle = '#c8a040';
+  ctx.fillRect(s.basketX - bW/2, H - 50, bW, bH);
+  ctx.fillStyle = '#8a6820';
+  ctx.fillRect(s.basketX - bW/2, H - 50 + bH, bW, 8);
+  ctx.fillStyle = '#f0f0f0';
+  ctx.font = '20px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🧺', s.basketX, H - 20);
+
+  // HUD
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(0, H - 16, W, 16);
+  ctx.fillStyle = '#c8a040';
+  ctx.font = 'bold 11px Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText(`Score: ${s.score}`, 8, H - 4);
+  ctx.textAlign = 'right';
+  ctx.fillText('❤️'.repeat(s.lives), W - 8, H - 4);
+
+  catchAnimFrame = requestAnimationFrame(catchLoop);
+}
+
+
 
 loadFromDB();
 
