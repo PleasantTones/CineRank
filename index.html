@@ -2434,7 +2434,7 @@ function runnerLoop(timestamp) {
 
   s.frame += dt;
   s.score = Math.floor(s.frame / 8);
-  s.speed = Math.min(4.0, 1.5 + s.score * 0.01);
+  s.speed = Math.min(7.0, 1.5 + s.score * 0.018);
 
   // Smooth lane transition
   if (s.targetLane !== s.lane) {
