@@ -1617,8 +1617,19 @@ function renderMatchup() {
     <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
     <div style="text-align:right;font-size:10px;color:#555;margin-top:3px">${pct}% complete</div>
   </div>`;
-  if (!currentPair) {
-    html+='<div class="no-player-msg">All movies marked as unseen — restore some in My Movies!</div>';
+  if (!currentPair || (totalUniquePairs > 0 && remainingPairs <= 0)) {
+    if (seenCount < 2) {
+      html+='<div class="no-player-msg">Mark at least 2 movies as seen in My Movies to start voting!</div>';
+    } else if (totalUniquePairs > 0 && remainingPairs <= 0) {
+      html+=`<div class="no-player-msg" style="text-align:center;padding:2rem 0">
+        <div style="font-size:40px;margin-bottom:12px">🎉</div>
+        <div style="font-size:17px;font-weight:700;color:#f0f0f0;margin-bottom:8px">All ${totalUniquePairs} pairs voted!</div>
+        <div style="font-size:13px;color:#777;margin-bottom:16px">Head to My Movies to mark more films as seen, then come back to vote on new pairs.</div>
+        <button class="arcade-btn" onclick="showTab('mymovies',document.getElementById('tab-btn-mymovies'))" style="margin:0 auto">Go to My Movies →</button>
+      </div>`;
+    } else {
+      html+='<div class="no-player-msg">All movies marked as unseen — restore some in My Movies!</div>';
+    }
   } else {
     const [a,b]=currentPair;
     const hint = '';
@@ -1870,9 +1881,57 @@ async function renderMyMovies(forcePlayer) {
   }
   if (unseen.length) {
     html+=`<div class="section-label">Haven't seen — ${unseen.length} movies</div>`;
-    html+=grid(unseen,m=>`<div class="my-card dim"><img class="my-poster" src="${m.img}" alt=""/><div class="my-title">${m.title}</div><span class="badge badge-gray">unseen</span>${seenBtns(m.id,false)}</div>`);
+    html+=grid(unseen,m=>`<div class="my-card"><img class="my-poster" src="${m.img}" alt=""/><div class="my-title">${m.title}</div><span class="badge badge-gray">unseen</span>${seenBtns(m.id,false)}</div>`);
   }
-  el.innerHTML = pillsHtml + _motdHtml + html;
+  const searchBar = `<div style="position:relative;margin-bottom:1rem">
+    <input id="mymovies-search" type="text" placeholder="Search movies..." autocomplete="off"
+      style="width:100%;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:10px 14px 10px 36px;font-size:14px;color:#f0f0f0;outline:none;box-sizing:border-box"
+      oninput="filterMyMovies(this.value)"
+      onfocus="this.style.borderColor='#6a5a20'"
+      onblur="this.style.borderColor='#3a3010'"/>
+    <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none">🔍</span>
+    <div id="mymovies-suggestions" style="position:absolute;top:100%;left:0;right:0;background:#1a1a1e;border:1px solid #3a3010;border-top:none;border-radius:0 0 10px 10px;z-index:100;display:none;max-height:200px;overflow-y:auto"></div>
+  </div>`;
+  el.innerHTML = pillsHtml + searchBar + _motdHtml + html;
+}
+
+function filterMyMovies(query) {
+  const q = query.trim().toLowerCase();
+  const suggestEl = document.getElementById('mymovies-suggestions');
+  
+  // Hide/show movie cards based on search
+  const cards = document.querySelectorAll('.my-card');
+  cards.forEach(card => {
+    const title = card.querySelector('.my-title')?.textContent?.toLowerCase() || '';
+    card.style.display = (!q || title.includes(q)) ? '' : 'none';
+  });
+  // Hide section labels if all cards hidden
+  document.querySelectorAll('.section-label').forEach(label => {
+    let next = label.nextElementSibling;
+    let hasVisible = false;
+    while (next && !next.classList.contains('section-label')) {
+      if (next.classList.contains('my-grid')) {
+        const visibleCards = [...next.querySelectorAll('.my-card')].filter(c => c.style.display !== 'none');
+        if (visibleCards.length > 0) hasVisible = true;
+      }
+      next = next.nextElementSibling;
+    }
+    label.style.display = hasVisible || !q ? '' : 'none';
+  });
+
+  // Autocomplete suggestions
+  if (!suggestEl) return;
+  if (!q) { suggestEl.style.display = 'none'; return; }
+  const matches = MOVIES.filter(m => m.title.toLowerCase().includes(q)).slice(0, 6);
+  if (matches.length === 0) { suggestEl.style.display = 'none'; return; }
+  suggestEl.style.display = 'block';
+  suggestEl.innerHTML = matches.map(m => `
+    <div onclick="document.getElementById('mymovies-search').value='${m.title.replace(/'/g,"\\'")}';filterMyMovies('${m.title.replace(/'/g,"\\'")}');document.getElementById('mymovies-suggestions').style.display='none'"
+      style="padding:8px 14px;cursor:pointer;font-size:13px;color:#e0e0e0;border-bottom:1px solid #2a2010;display:flex;align-items:center;gap:10px"
+      onmouseover="this.style.background='#222218'" onmouseout="this.style.background='none'">
+      <img src="${m.img}" style="width:24px;height:36px;object-fit:cover;border-radius:3px;flex-shrink:0"/>
+      ${m.title}
+    </div>`).join('');
 }
 
 let setupIndex = 0;
