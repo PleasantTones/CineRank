@@ -2098,9 +2098,12 @@ async function renderArcade() {
   } catch(e) {}
 
   const games = [
-    { id: 'runner', icon: '🏃', title: 'Cinema Runner', desc: 'Sprint through the cinema hallway dodging movie posters jutting out from both walls. How far can you run?' },
-    { id: 'memory', icon: '🎭', title: 'Memory Match', desc: 'Flip and match movie poster pairs before the clock runs out. 6 pairs, 90 seconds.' },
-    { id: 'catch', icon: '🎪', title: 'Poster Catch', desc: 'Posters rain down — catch only the ones that match the prompt! Dodge the rest or lose a life.' },
+    { id: 'runner', icon: '🏃', title: 'Cinema Runner', desc: 'Run down a cinema hallway dodging movie posters that block your lane. Use ← → to switch between 3 lanes. Speed increases over time. Collect 💚 hearts to recover lives.' },
+    { id: 'memory', icon: '🎭', title: 'Memory Match', desc: 'Flip cards to reveal movie posters and find matching pairs. 6 pairs hidden across 12 cards — 30 seconds to match them all. Faster = more points.' },
+    { id: 'catch', icon: '🎪', title: 'Poster Catch', desc: 'A prompt appears e.g. Catch: Horror movies. Posters fall from the top — move your basket left/right to catch matching ones (green border). Non-matching posters pass through. Miss a target = lose a life.' },
+    { id: 'rottenorfresh', icon: '🍅', title: 'Rotten or Fresh', desc: 'Popcorn and tomatoes fly in from all sides. Move your basket with arrow keys, mouse, or touch to catch the popcorn and dodge the tomatoes. Getting hit by a tomato costs a life.' },
+    { id: 'snake', icon: '🐍', title: 'Box Office Snake', desc: 'Classic snake but you must eat movie posters from lowest to highest worldwide box office gross. The next target is always shown at the top. Wrong order or hitting a wall = game over.' },
+    { id: "directorcut", icon: "🎬", title: "Directors Cut", desc: "A clapper board appears — wait for it to snap shut, then tap immediately. Tap too early = miss. 10 rounds, 100 points per hit. Nerves of steel required." },
   ];
 
   let html = `<div class="section-label">Pick a game</div>
@@ -2128,12 +2131,12 @@ async function renderArcade() {
   // ── ARCADE LEADERBOARDS ──
   html += `<div class="section-label" style="margin-top:1.5rem">Arcade leaderboards</div>`;
 
-  const gameLabels = { runner: '🏃 Cinema Runner', memory: '🎭 Memory Match', catch: '🎪 Poster Catch' };
-  const maxPts = { runner: 500, memory: 1000, catch: 25 };
+  const gameLabels = { runner: '🏃 Cinema Runner', memory: '🎭 Memory Match', catch: '🎪 Poster Catch', rottenorfresh: '🍅 Rotten or Fresh', snake: '🐍 Box Office Snake', directorcut: "🎬 Director's Cut" };
+  const maxPts = { runner: 500, memory: 1000, catch: 25, rottenorfresh: 30, snake: 500, directorcut: 1000 };
 
-  html += `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:stretch">`;
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:stretch">`;
 
-  ['runner','memory','catch'].forEach(gameId => {
+  ['runner','memory','catch','rottenorfresh','snake','directorcut'].forEach(gameId => {
     const gameScores = (scores[gameId] || []).sort((a,b) => b.score - a.score);
     const max = maxPts[gameId];
     html += `<div style="background:#111113;border:1px solid #3a3010;border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
@@ -2294,14 +2297,22 @@ function startArcadeGame(gameId) {
   if (gameId === 'runner') startRunner();
   if (gameId === 'memory') startMemory();
   if (gameId === 'catch') startCatch();
+  if (gameId === 'rottenorfresh') startRottenOrFresh();
+  if (gameId === 'snake') startSnake();
+  if (gameId === 'directorcut') startDirectorCut();
 }
 
 function backToArcade() {
   if (chatPollInterval) clearInterval(chatPollInterval);
-  // Stop any running games
   if (runnerAnimFrame) cancelAnimationFrame(runnerAnimFrame);
   if (catchAnimFrame) cancelAnimationFrame(catchAnimFrame);
-  runnerAnimFrame = null; catchAnimFrame = null;
+  if (rofAnimFrame) cancelAnimationFrame(rofAnimFrame);
+  if (snakeAnimFrame) cancelAnimationFrame(snakeAnimFrame);
+  if (dcTimeout) clearTimeout(dcTimeout);
+  runnerAnimFrame = null; catchAnimFrame = null; rofAnimFrame = null; snakeAnimFrame = null;
+  window.rofActive = false; window.snakeActive = false;
+  document.removeEventListener('keydown', rofKeyHandler);
+  document.removeEventListener('keydown', snakeKeyHandler);
   renderArcade();
 }
 
@@ -2434,7 +2445,7 @@ function runnerLoop(timestamp) {
 
   s.frame += dt;
   s.score = Math.floor(s.frame / 8);
-  s.speed = Math.min(7.0, 1.5 + s.score * 0.018);
+  s.speed = Math.min(10.0, 2.5 + s.score * 0.025 + s.score * s.score * 0.0001);
 
   // Smooth lane transition
   if (s.targetLane !== s.lane) {
@@ -2447,7 +2458,7 @@ function runnerLoop(timestamp) {
   // === SPAWN OBSTACLES ===
   // Obstacles block a lane completely - player MUST switch to another lane
   // Keep consistent gap regardless of speed - interval shrinks with speed so distance stays constant
-  const spawnInterval = Math.max(70, Math.floor(130 / s.speed));
+  const spawnInterval = Math.max(45, Math.floor(90 / s.speed));
   if (s.frame - s.lastSpawn > spawnInterval) {
     s.lastSpawn = s.frame;
     // Pick a random lane - force player to dodge
@@ -2461,7 +2472,7 @@ function runnerLoop(timestamp) {
     blockedLanes.forEach(lane => {
       const m = s.moviePool[s.movieIdx % s.moviePool.length];
       s.movieIdx++;
-      s.obstacles.push({ lane, z: 0, movieId: m.id, img: s.imgCache[m.id], title: m.title, passed: false, hit: false });
+      s.obstacles.push({ lane, z: -0.4, movieId: m.id, img: s.imgCache[m.id], title: m.title, passed: false, hit: false });
     });
   }
 
@@ -2528,7 +2539,7 @@ function runnerLoop(timestamp) {
 
   // === DRAW & UPDATE OBSTACLES ===
   s.obstacles = s.obstacles.filter(ob => {
-    ob.z += s.speed * 0.005 * dt;
+    ob.z += (0.006 + s.speed * 0.003) * dt;
     if (ob.z > 1.3) return false;
 
     const t = ob.z; // 0=far, 1=near
@@ -2570,7 +2581,7 @@ function runnerLoop(timestamp) {
     }
 
     // === COLLISION ===
-    if (t > 0.80 && t < 1.02 && !ob.passed && !ob.hit) {
+    if (t > 0.82 && t < 1.0 && !ob.passed && !ob.hit) {
       if (s.lane === ob.lane) {
         ob.hit = true;
         s.lives--;
@@ -2678,12 +2689,22 @@ document.addEventListener('keydown', e => {
 
 // Touch swipe for runner
 let runnerTouchX = 0;
-document.addEventListener('touchstart', e => { runnerTouchX = e.touches[0].clientX; }, { passive: true });
+let runnerTouchStartX = 0;
+document.addEventListener('touchstart', e => {
+  runnerTouchStartX = e.touches[0].clientX;
+  runnerTouchX = e.touches[0].clientX;
+  // Instant lane switch on tap side - don't wait for touchend
+  if (!window.runnerGameActive) return;
+  const screenW = window.innerWidth;
+  const x = e.touches[0].clientX;
+  if (x < screenW * 0.33) runnerChangeLane(-1);       // left third = go left
+  else if (x > screenW * 0.66) runnerChangeLane(1);   // right third = go right
+  // center third = no immediate action, wait for swipe
+}, { passive: true });
 document.addEventListener('touchend', e => {
   if (!window.runnerGameActive) return;
-  const dx = e.changedTouches[0].clientX - runnerTouchX;
-  if (Math.abs(dx) > 30) runnerChangeLane(dx > 0 ? 1 : -1);
-  else runnerJump();
+  const dx = e.changedTouches[0].clientX - runnerTouchStartX;
+  if (Math.abs(dx) > 20) runnerChangeLane(dx > 0 ? 1 : -1);
 }, { passive: true });
 
 // ═══════════════════════════════════════════════════════
@@ -3070,6 +3091,545 @@ function catchLoop(timestamp) {
 }
 
 
+
+
+// ═══════════════════════════════════════════════════════
+// GAME 4: ROTTEN OR FRESH
+// Popcorn buckets and tomatoes fly from both sides
+// Move basket up/down to catch popcorn, avoid tomatoes
+// ═══════════════════════════════════════════════════════
+let rofAnimFrame = null;
+
+function startRottenOrFresh() {
+  const el = document.getElementById('arcade-content');
+  el.innerHTML = `
+    <div style="background:#0c0c0e;border:1px solid #3a3010;border-radius:14px;overflow:hidden;position:relative">
+      <canvas id="rof-canvas" width="600" height="420" style="display:block;width:100%;max-width:600px;margin:0 auto"></canvas>
+      <div id="rof-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
+        <div style="font-size:40px;margin-bottom:8px">🍅🍿</div>
+        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Rotten or Fresh?</div>
+        <div style="font-size:13px;color:#777;margin-bottom:16px;text-align:center;max-width:280px">Catch the 🍿 popcorn, dodge the 🍅 tomatoes! Move up/down to dodge.</div>
+        <div style="font-size:12px;color:#555;margin-bottom:16px">Arrow keys or WASD · mouse to follow · drag on mobile</div>
+        <button class="arcade-btn" onclick="rofStart()">Start!</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+      </div>
+    </div>`;
+  const canvas = document.getElementById('rof-canvas');
+  canvas.addEventListener('click', () => { if (!window.rofActive) rofStart(); });
+  // Touch drag
+  canvas.addEventListener('touchmove', e => {
+    if (!window.rofActive) return;
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    rofState.targetX = (e.touches[0].clientX - rect.left) * (canvas.width / rect.width);
+    rofState.targetY = (e.touches[0].clientY - rect.top)  * (canvas.height / rect.height);
+  }, { passive: false });
+  canvas.addEventListener('mousemove', e => {
+    if (!window.rofActive) return;
+    const rect = canvas.getBoundingClientRect();
+    rofState.targetX = (e.clientX - rect.left) * (canvas.width / rect.width);
+    rofState.targetY = (e.clientY - rect.top)  * (canvas.height / rect.height);
+  });
+  document.addEventListener('keydown', rofKeyHandler);
+}
+
+let rofState = {};
+const rofKeysHeld = { left: false, right: false, up: false, down: false };
+function rofKeyHandler(e) {
+  if (!window.rofActive) return;
+  if (e.code === 'ArrowLeft'  || e.key === 'a' || e.key === 'A') rofKeysHeld.left  = true;
+  if (e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') rofKeysHeld.right = true;
+  if (e.code === 'ArrowUp'    || e.key === 'w' || e.key === 'W') rofKeysHeld.up    = true;
+  if (e.code === 'ArrowDown'  || e.key === 's' || e.key === 'S') rofKeysHeld.down  = true;
+}
+document.addEventListener('keyup', e => {
+  if (e.code === 'ArrowLeft'  || e.key === 'a' || e.key === 'A') rofKeysHeld.left  = false;
+  if (e.code === 'ArrowRight' || e.key === 'd' || e.key === 'D') rofKeysHeld.right = false;
+  if (e.code === 'ArrowUp'    || e.key === 'w' || e.key === 'W') rofKeysHeld.up    = false;
+  if (e.code === 'ArrowDown'  || e.key === 's' || e.key === 'S') rofKeysHeld.down  = false;
+});
+
+function rofStart() {
+  document.getElementById('rof-overlay').style.display = 'none';
+  rofState = {
+    playerX: 300, playerY: 210, targetX: 300, targetY: 210,
+    score: 0, lives: 3, frame: 0,
+    items: [], lastSpawn: 0, speed: 3, gameOver: false, lastTime: null
+  };
+  window.rofActive = true;
+  rofLoop();
+}
+
+function rofLoop(timestamp) {
+  if (!window.rofActive) return;
+  const canvas = document.getElementById('rof-canvas');
+  if (!canvas) { window.rofActive = false; return; }
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const s = rofState;
+  const now = timestamp || performance.now();
+  const dt = Math.min(2.5, s.lastTime ? (now - s.lastTime) / (1000/60) : 1);
+  s.lastTime = now;
+
+  if (s.gameOver) {
+    window.rofActive = false;
+    document.removeEventListener('keydown', rofKeyHandler);
+    saveArcadeScore('rottenorfresh', s.score);
+    document.getElementById('arcade-content').innerHTML = `<div class="arcade-game" style="text-align:center">
+      <div style="font-size:48px;margin-bottom:8px">${s.score > 20 ? '🌟' : '🍅'}</div>
+      <div class="arcade-game-title">Game Over!</div>
+      <div class="arcade-score-display">${s.score}</div>
+      <div class="arcade-score-label">popcorn caught</div>
+      <div style="margin-top:1rem;color:#777;font-size:13px">${s.score > 20 ? 'Certified Fresh! 🍿' : s.score > 10 ? 'Mixed reviews 🤔' : 'Rotten! 🍅'}</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
+        <button class="arcade-btn" onclick="startArcadeGame('rottenorfresh')">Play again</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  s.frame += dt;
+  s.speed = Math.min(7, 2.5 + s.frame * 0.012);
+
+  // Move basket freely in 2D
+  const step = 9 * dt;
+  if (rofKeysHeld.left)  { s.playerX = Math.max(40, s.playerX - step); s.targetX = s.playerX; }
+  if (rofKeysHeld.right) { s.playerX = Math.min(W-40, s.playerX + step); s.targetX = s.playerX; }
+  if (rofKeysHeld.up)    { s.playerY = Math.max(40, s.playerY - step); s.targetY = s.playerY; }
+  if (rofKeysHeld.down)  { s.playerY = Math.min(H-40, s.playerY + step); s.targetY = s.playerY; }
+  // Smooth to mouse/touch target
+  s.playerX += (s.targetX - s.playerX) * Math.min(1, 0.25 * dt);
+  s.playerY += (s.targetY - s.playerY) * Math.min(1, 0.25 * dt);
+
+  // Spawn items from all 4 sides, aimed roughly toward center
+  if (s.frame - s.lastSpawn > Math.max(20, 55 / s.speed)) {
+    s.lastSpawn = s.frame;
+    const isPopcorn = Math.random() < 0.55;
+    const side = Math.floor(Math.random() * 4); // 0=top 1=bottom 2=left 3=right
+    let x, y, vx, vy;
+    const spread = 0.6;
+    if (side === 0) { x = 60+Math.random()*(W-120); y = -40; vx=(Math.random()-0.5)*spread; vy=1; }
+    else if (side === 1) { x = 60+Math.random()*(W-120); y = H+40; vx=(Math.random()-0.5)*spread; vy=-1; }
+    else if (side === 2) { x = -40; y = 60+Math.random()*(H-120); vx=1; vy=(Math.random()-0.5)*spread; }
+    else { x = W+40; y = 60+Math.random()*(H-120); vx=-1; vy=(Math.random()-0.5)*spread; }
+    s.items.push({ x, y, vx, vy, isPopcorn, done: false });
+  }
+
+  // Background - cinema screen glow
+  ctx.fillStyle = '#0a0808';
+  ctx.fillRect(0, 0, W, H);
+  const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W/2);
+  grad.addColorStop(0, 'rgba(200,160,64,0.04)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw items flying from all sides
+  s.items = s.items.filter(item => {
+    if (item.done) return false;
+    item.x += item.vx * s.speed * dt;
+    item.y += item.vy * s.speed * dt;
+    if (item.x < -60 || item.x > W+60 || item.y < -60 || item.y > H+60) return false;
+
+    ctx.font = '30px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(item.isPopcorn ? '🍿' : '🍅', item.x, item.y + 10);
+
+    // Collision with basket
+    if (Math.abs(item.x - s.playerX) < 38 && Math.abs(item.y - s.playerY) < 38) {
+      item.done = true;
+      if (item.isPopcorn) {
+        s.score++;
+        ctx.fillStyle = 'rgba(74,222,128,0.2)';
+        ctx.fillRect(0, 0, W, H);
+      } else {
+        s.lives--;
+        if (s.lives <= 0) s.gameOver = true;
+        ctx.fillStyle = 'rgba(220,50,50,0.25)';
+        ctx.fillRect(0, 0, W, H);
+      }
+      return false;
+    }
+    return true;
+  });
+
+  // Draw basket at player position
+  ctx.font = '44px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('🧺', s.playerX, s.playerY + 14);
+
+  // HUD
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, W, 38);
+  ctx.fillStyle = '#c8a040';
+  ctx.font = 'bold 14px Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText(`🍿 ${s.score}`, 12, 24);
+  ctx.textAlign = 'right';
+  ctx.fillText('❤️'.repeat(Math.max(0, s.lives)), W - 12, 24);
+
+  rofAnimFrame = requestAnimationFrame(rofLoop);
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME 5: BOX OFFICE SNAKE
+// Classic snake - eat movie posters in ascending box office order
+// ═══════════════════════════════════════════════════════
+let snakeAnimFrame = null;
+
+// Box office data for snake game (ID -> millions USD, sorted low to high)
+const BOX_OFFICE_DATA = {
+  'M0016': 8, 'M0053': 8, 'M0028': 8, 'M0036': 8, 'M0050': 10,
+  'M0035': 10, 'M0020': 10, 'M0013': 12, 'M0033': 12, 'M0038': 12,
+  'M0054': 12, 'M0048': 12, 'M0041': 15, 'M0026': 15, 'M0011': 15,
+  'M0009': 18, 'M0006': 18, 'M0051': 18, 'M0034': 18, 'M0023': 18,
+  'M0055': 20, 'M0022': 20, 'M0005': 22, 'M0015': 25, 'M0052': 25,
+  'M0012': 25, 'M0017': 28, 'M0044': 28, 'M0027': 32, 'M0046': 35,
+  'M0021': 35, 'M0047': 30, 'M0002': 38, 'M0001': 45, 'M0031': 45,
+  'M0003': 52, 'M0039': 55, 'M0024': 88, 'M0037': 95, 'M0007': 95,
+  'M0043': 95, 'M0008': 120, 'M0029': 140, 'M0056': 145, 'M0010': 135,
+  'M0018': 180, 'M0049': 85, 'M0025': 220, 'M0004': 480, 'M0019': 420,
+  'M0042': 380, 'M0014': 690,
+};
+const SNAKE_MOVIES = Object.entries(BOX_OFFICE_DATA)
+  .sort((a, b) => a[1] - b[1])
+  .map(([id, gross]) => ({ id, gross, movie: MOVIES.find(m => m.id === id) }))
+  .filter(e => e.movie);
+
+function startSnake() {
+  const el = document.getElementById('arcade-content');
+  el.innerHTML = `
+    <div style="background:#0c0c0e;border:1px solid #3a3010;border-radius:14px;overflow:hidden;position:relative">
+      <canvas id="snake-canvas" width="600" height="500" style="display:block;width:100%;max-width:600px;margin:0 auto"></canvas>
+      <div id="snake-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
+        <div style="font-size:40px;margin-bottom:8px">🐍🎬</div>
+        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Box Office Snake</div>
+        <div style="font-size:13px;color:#777;margin-bottom:4px;text-align:center;max-width:280px">Eat movie posters from lowest to highest box office gross.</div>
+        <div style="font-size:13px;color:#c8a040;margin-bottom:16px;text-align:center;max-width:280px">The next target is always shown — wrong order = game over!</div>
+        <div style="font-size:12px;color:#555;margin-bottom:16px">Arrow keys or swipe</div>
+        <button class="arcade-btn" onclick="snakeStart()">Start!</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+      </div>
+    </div>`;
+
+  const canvas = document.getElementById('snake-canvas');
+  document.addEventListener('keydown', snakeKeyHandler);
+  let swipeStart = null;
+  canvas.addEventListener('touchstart', e => { swipeStart = {x: e.touches[0].clientX, y: e.touches[0].clientY}; }, {passive:true});
+  canvas.addEventListener('touchend', e => {
+    if (!swipeStart) return;
+    const dx = e.changedTouches[0].clientX - swipeStart.x;
+    const dy = e.changedTouches[0].clientY - swipeStart.y;
+    if (Math.abs(dx) > Math.abs(dy)) snakeState.nextDir = dx > 0 ? {x:1,y:0} : {x:-1,y:0};
+    else snakeState.nextDir = dy > 0 ? {x:0,y:1} : {x:0,y:-1};
+  }, {passive:true});
+}
+
+let snakeState = {};
+const CELL = 24;
+
+function snakeKeyHandler(e) {
+  if (!window.snakeActive) return;
+  const dirs = { ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
+                 w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0} };
+  const d = dirs[e.key];
+  if (d && !(d.x === -snakeState.dir.x && d.y === -snakeState.dir.y)) {
+    snakeState.nextDir = d;
+  }
+}
+
+function snakeStart() {
+  document.getElementById('snake-overlay').style.display = 'none';
+  const cols = Math.floor(600 / CELL), rows = Math.floor((500 - 42) / CELL);
+  snakeState = {
+    snake: [{x: Math.floor(cols/2), y: Math.floor(rows/2)}],
+    dir: {x:1, y:0}, nextDir: {x:1, y:0},
+    score: 0, targetIdx: 0, food: null,
+    cols, rows, gameOver: false, frame: 0, speed: 8,
+    countdown: 3,
+  };
+  snakePlaceFood();
+  // Countdown before starting
+  const canvas = document.getElementById('snake-canvas');
+  const ctx = canvas.getContext('2d');
+  let count = 3;
+  function drawCountdown() {
+    ctx.fillStyle = '#0a0808';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Draw grid faintly
+    ctx.strokeStyle = '#1a1210'; ctx.lineWidth = 0.5;
+    for (let x = 0; x < snakeState.cols; x++) { ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,canvas.height); ctx.stroke(); }
+    for (let y = 0; y < snakeState.rows; y++) { ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(canvas.width,y*CELL); ctx.stroke(); }
+    // Draw food preview
+    if (snakeState.food && snakeState.food.movie) {
+      const img = new Image(); img.src = snakeState.food.movie.img;
+      const fx = snakeState.food.x * CELL, fy = snakeState.food.y * CELL;
+      if (img.complete) ctx.drawImage(img, fx+1, fy+1, CELL-2, CELL-2);
+      ctx.strokeStyle = '#c8a040'; ctx.lineWidth = 2;
+      ctx.strokeRect(fx+1, fy+1, CELL-2, CELL-2);
+    }
+    // Countdown number
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.font = 'bold 80px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#c8a040';
+    ctx.fillText(count > 0 ? count : 'GO!', canvas.width/2, canvas.height/2 + 28);
+    ctx.font = '16px Arial';
+    ctx.fillStyle = '#777';
+    ctx.fillText('Get ready...', canvas.width/2, canvas.height/2 - 50);
+    // Next target info
+    if (snakeState.food) {
+      const title = snakeState.food.movie.title.length > 24 ? snakeState.food.movie.title.slice(0,23)+'…' : snakeState.food.movie.title;
+      ctx.fillStyle = '#c8a040'; ctx.font = 'bold 13px Arial';
+      ctx.fillText('First target: ' + title, canvas.width/2, canvas.height/2 + 80);
+    }
+  }
+  drawCountdown();
+  const timer = setInterval(() => {
+    count--;
+    drawCountdown();
+    if (count < 0) {
+      clearInterval(timer);
+      window.snakeActive = true;
+      snakeLoop();
+    }
+  }, 900);
+}
+
+function snakePlaceFood() {
+  const s = snakeState;
+  const target = SNAKE_MOVIES[s.targetIdx % SNAKE_MOVIES.length];
+  let x, y;
+  do {
+    x = Math.floor(Math.random() * s.cols);
+    y = Math.floor(Math.random() * s.rows);
+  } while (s.snake.some(seg => seg.x === x && seg.y === y));
+  s.food = { x, y, movie: target.movie, gross: target.gross, idx: s.targetIdx };
+}
+
+function snakeLoop() {
+  if (!window.snakeActive) return;
+  const canvas = document.getElementById('snake-canvas');
+  if (!canvas) { window.snakeActive = false; return; }
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const s = snakeState;
+
+  s.frame++;
+  const moveInterval = Math.max(4, s.speed - Math.floor(s.score / 3));
+
+  if (s.frame % moveInterval === 0) {
+    s.dir = s.nextDir;
+    const head = { x: s.snake[0].x + s.dir.x, y: s.snake[0].y + s.dir.y };
+
+    // Wall collision
+    if (head.x < 0 || head.x >= s.cols || head.y < 0 || head.y >= s.rows ||
+        s.snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+      s.gameOver = true;
+    } else {
+      s.snake.unshift(head);
+      // Eat food
+      if (head.x === s.food.x && head.y === s.food.y) {
+        s.score++;
+        s.targetIdx++;
+        snakePlaceFood();
+        // Don't remove tail - snake grows
+      } else {
+        s.snake.pop();
+      }
+    }
+  }
+
+  if (s.gameOver) {
+    window.snakeActive = false;
+    document.removeEventListener('keydown', snakeKeyHandler);
+    saveArcadeScore('snake', s.score);
+    document.getElementById('arcade-content').innerHTML = `<div class="arcade-game" style="text-align:center">
+      <div style="font-size:48px;margin-bottom:8px">🐍</div>
+      <div class="arcade-game-title">Game Over!</div>
+      <div class="arcade-score-display">${s.score}</div>
+      <div class="arcade-score-label">movies eaten</div>
+      <div style="margin-top:1rem;color:#777;font-size:13px">${s.score > 10 ? '🎬 Box office legend!' : s.score > 5 ? '📈 Not bad!' : '🎟️ Keep slithering!'}</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
+        <button class="arcade-btn" onclick="startArcadeGame('snake')">Play again</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  // Draw background
+  ctx.fillStyle = '#0a0808';
+  ctx.fillRect(0, 0, W, H);
+  // HUD bar at top
+  ctx.fillStyle = 'rgba(0,0,0,0.8)';
+  ctx.fillRect(0, 0, W, 42);
+  ctx.strokeStyle = '#2a1a08'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0,42); ctx.lineTo(W,42); ctx.stroke();
+  // Grid below HUD
+  ctx.strokeStyle = '#1a1210';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < s.cols; x++) { ctx.beginPath(); ctx.moveTo(x*CELL,42); ctx.lineTo(x*CELL,H); ctx.stroke(); }
+  for (let y = 0; y <= s.rows; y++) { ctx.beginPath(); ctx.moveTo(0,42+y*CELL); ctx.lineTo(W,42+y*CELL); ctx.stroke(); }
+
+  // Draw food (next target poster) - offset by HUD height
+  if (s.food && s.food.movie) {
+    const img = new Image(); img.src = s.food.movie.img;
+    const fx = s.food.x * CELL, fy = 42 + s.food.y * CELL;
+    ctx.save();
+    ctx.shadowColor = '#c8a040'; ctx.shadowBlur = 12;
+    if (img.complete && img.naturalWidth > 0) ctx.drawImage(img, fx+1, fy+1, CELL-2, CELL-2);
+    else { ctx.fillStyle = '#3a2010'; ctx.fillRect(fx+1,fy+1,CELL-2,CELL-2); }
+    ctx.restore();
+    ctx.strokeStyle = '#c8a040'; ctx.lineWidth = 2;
+    ctx.strokeRect(fx+1, fy+1, CELL-2, CELL-2);
+  }
+
+  // Draw snake - offset by HUD height
+  s.snake.forEach((seg, i) => {
+    const t = 1 - i / s.snake.length;
+    ctx.fillStyle = `rgba(200,160,64,${0.3 + t * 0.7})`;
+    ctx.fillRect(seg.x*CELL+1, 42+seg.y*CELL+1, CELL-2, CELL-2);
+    if (i === 0) {
+      ctx.font = `${CELL-4}px serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('🐍', seg.x*CELL + CELL/2, 42+seg.y*CELL + CELL - 2);
+    }
+  });
+
+  // HUD drawn on top
+  ctx.fillStyle = '#c8a040';
+  ctx.font = 'bold 13px Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText(`🎬 ${s.score} eaten`, 12, 26);
+  if (s.food) {
+    const title = s.food.movie.title.length > 22 ? s.food.movie.title.slice(0,21)+'…' : s.food.movie.title;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillText(`Next: ${title} ($${SNAKE_MOVIES[s.food.idx % SNAKE_MOVIES.length]?.gross}M)`, W/2, 26);
+  }
+
+  snakeAnimFrame = requestAnimationFrame(snakeLoop);
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME 6: DIRECTOR'S CUT
+// Clapper boards fall, tap at exact moment they snap shut
+// ═══════════════════════════════════════════════════════
+function startDirectorCut() {
+  const el = document.getElementById('arcade-content');
+  el.innerHTML = `<div class="arcade-game">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
+      <span style="font-size:13px;color:#777">Tap when the clapper snaps shut!</span>
+    </div>
+    <div id="dc-game" style="text-align:center"></div>
+  </div>`;
+  dcState = { score: 0, round: 0, total: 10, active: false };
+  dcTimeout = null;
+  dcNextRound();
+}
+
+let dcState = {};
+let dcTimeout = null;
+
+function dcNextRound() {
+  const el = document.getElementById('dc-game');
+  if (!el) return;
+  const s = dcState;
+
+  if (s.round >= s.total) {
+    saveArcadeScore('directorcut', s.score);
+    el.innerHTML = `<div style="padding:2rem 0">
+      <div style="font-size:48px;margin-bottom:8px">🎬</div>
+      <div class="arcade-game-title">That's a Wrap!</div>
+      <div class="arcade-score-display">${s.score}</div>
+      <div class="arcade-score-label">points out of ${s.total * 100}</div>
+      <div style="margin-top:1rem;color:#777;font-size:13px">${s.score >= s.total*85 ? '🌟 Perfect takes!' : s.score >= s.total*60 ? '👍 Good director!' : '🎭 Keep practicing!'}</div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
+        <button class="arcade-btn" onclick="startArcadeGame('directorcut')">Play again</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+      </div>
+    </div>`;
+    return;
+  }
+
+  s.round++;
+  s.active = false;
+  if (dcTimeout) clearTimeout(dcTimeout);
+
+  const movie = MOVIES[Math.floor(Math.random() * MOVIES.length)];
+  const snapDelay = 1200 + Math.random() * 2200;
+
+  // Show open clapper - waiting state
+  el.innerHTML = `<div style="padding:1rem 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding:0 1rem">
+      <span style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.08em">Take ${s.round} / ${s.total}</span>
+      <span style="font-size:15px;font-weight:700;color:#c8a040">${s.score} pts</span>
+    </div>
+    <div style="font-size:13px;color:#c8a040;margin-bottom:1.5rem">Scene: "${movie.title}"</div>
+    <div id="dc-visual" style="margin:0 auto 1rem;width:160px;height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1a1e;border:2px solid #3a3010;border-radius:16px;cursor:pointer;transition:all 0.15s" onclick="dcTap()">
+      <div id="dc-top" style="font-size:52px;transition:transform 0.08s;transform-origin:bottom center;transform:rotate(-35deg)">🎬</div>
+      <div id="dc-bottom" style="font-size:28px;margin-top:-8px">📋</div>
+    </div>
+    <div id="dc-status" style="font-size:16px;color:#555;min-height:28px;font-weight:600">Get ready...</div>
+    <div style="font-size:12px;color:#444;margin-top:6px">Tap the clapper when it snaps!</div>
+    <div style="display:flex;justify-content:center;gap:6px;margin-top:1.25rem">
+      ${Array.from({length: s.total}, (_,i) => `<div style="width:8px;height:8px;border-radius:50%;background:${i < s.round-1 ? '#c8a040' : '#2a2a2e'}"></div>`).join('')}
+    </div>
+  </div>`;
+
+  // Snap after delay
+  dcTimeout = setTimeout(() => {
+    const top = document.getElementById('dc-top');
+    const status = document.getElementById('dc-status');
+    const visual = document.getElementById('dc-visual');
+    if (!top || !status) return;
+
+    // Animate snap shut
+    top.style.transform = 'rotate(0deg)';
+    top.style.fontSize = '52px';
+    if (visual) { visual.style.borderColor = '#c8a040'; visual.style.background = '#1a1810'; }
+    status.textContent = 'TAP NOW!';
+    status.style.color = '#f5f0e8';
+    status.style.fontSize = '22px';
+    s.active = true;
+
+    // Miss window - 900ms to tap
+    dcTimeout = setTimeout(() => {
+      if (!s.active) return;
+      s.active = false;
+      const st = document.getElementById('dc-status');
+      const vis = document.getElementById('dc-visual');
+      if (st) { st.textContent = '⏰ Too slow! +0 pts'; st.style.color = '#f87171'; st.style.fontSize = '16px'; }
+      if (vis) { vis.style.borderColor = '#f87171'; }
+      dcTimeout = setTimeout(dcNextRound, 1000);
+    }, 900);
+  }, snapDelay);
+}
+
+function dcTap() {
+  const s = dcState;
+  const status = document.getElementById('dc-status');
+  const visual = document.getElementById('dc-visual');
+
+  if (!s.active) {
+    // Too early
+    if (status) { status.textContent = '⚡ Too early!'; status.style.color = '#f87171'; status.style.fontSize = '16px'; }
+    if (visual) { visual.style.borderColor = '#f87171'; setTimeout(() => { if (visual) visual.style.borderColor = '#3a3010'; }, 400); }
+    return;
+  }
+
+  s.active = false;
+  if (dcTimeout) clearTimeout(dcTimeout);
+  s.score += 100;
+
+  if (visual) { visual.style.borderColor = '#4ade80'; visual.style.background = '#0a2010'; }
+  if (status) { status.textContent = '🎬 Cut! +100 pts'; status.style.color = '#4ade80'; status.style.fontSize = '16px'; }
+  dcTimeout = setTimeout(dcNextRound, 800);
+}
 
 loadFromDB();
 
