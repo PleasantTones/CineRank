@@ -40,7 +40,7 @@
   .header p { font-size: 10px; color: #888; margin-top: 0; letter-spacing: 0.25em; text-transform: uppercase; font-family: 'Special Elite', monospace; }
   .name-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 1.25rem; }
   .name-row label { font-size: 14px; color: #666; font-weight: 500; }
-  .name-row select { padding: 9px 16px; border-radius: 10px; border: 1px solid #323236; font-size: 14px; background: #1c1c1f; color: #e8e8e8; min-width: 160px; cursor: pointer; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03); appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a5020' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; transition: border-color 0.2s, box-shadow 0.2s; }
+  .name-row select { padding: 9px 16px; border-radius: 10px; border: 1px solid #323236; font-size: 16px; background: #1c1c1f; color: #e8e8e8; min-width: 160px; cursor: pointer; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03); appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a5020' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; transition: border-color 0.2s, box-shadow 0.2s; }
   .name-row select:hover { border-color: #5a4518; }
   .name-row select:focus { outline: none; border-color: #8a6c2a; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 0 0 2px rgba(138,108,42,0.2); }
   .tabs-wrap { display: flex; justify-content: center; background: #111113; border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 1.5rem; width: fit-content; margin-left: auto; margin-right: auto; }
@@ -309,7 +309,7 @@
   .start-voting-btn:hover { background: #357a5c; }
   .start-voting-btn:disabled { background: #1a2e22; color: #2d6a4f; cursor: default; }
   @media (max-width: 600px) {
-    #app { padding: 0.75rem 0.5rem 2rem; }
+    #app { padding: 0.75rem 0.6rem 5rem; }
 
     /* Header */
     .header-inner { padding: 12px 16px 10px; }
@@ -317,32 +317,33 @@
     .header-now-playing { font-size: 7px; letter-spacing: 0.15em; }
     .header-divider { margin: 6px auto; }
 
-    /* Name row */
+    /* Name row — 16px on select prevents iOS auto-zoom */
     .name-row { flex-wrap: wrap; gap: 6px; justify-content: center; }
-    .name-row select { min-width: 130px; font-size: 13px; }
-    .done-btn { font-size: 11px; padding: 5px 10px; }
+    .name-row select { min-width: 130px; font-size: 16px; }
+    .done-btn { font-size: 13px; padding: 8px 14px; min-height: 44px; }
 
     /* Tabs - scroll horizontally if needed */
-    .tabs-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; padding: 4px 8px; }
-    .tab { padding: 7px 14px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+    .tabs-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; justify-content: flex-start; padding: 4px 6px; scrollbar-width: none; }
+    .tabs-wrap::-webkit-scrollbar { display: none; }
+    .tab { padding: 9px 14px; font-size: 13px; white-space: nowrap; flex-shrink: 0; min-height: 44px; }
 
     /* Vote stats strips */
-    .social-strip { padding: 5px 8px; }
-    .social-item { padding: 1px 4px; }
+    .social-strip { padding: 5px 6px; }
+    .social-item { padding: 1px 3px; }
     .social-label { font-size: 8px; }
     .social-val { font-size: 13px; }
     .social-val-sm { font-size: 10px; }
 
-    /* Matchup cards */
-    .matchup-section { gap: 0.4rem; }
-    .movie-card { padding: 0.6rem 0.4rem; gap: 6px; border-radius: 10px; }
-    .movie-poster { max-width: 105px; }
-    .movie-title { font-size: 11px; }
+    /* Matchup cards — bigger touch targets */
+    .matchup-section { gap: 0.35rem; }
+    .movie-card { padding: 0.75rem 0.5rem; gap: 8px; border-radius: 12px; }
+    .movie-poster { max-width: 120px; }
+    .movie-title { font-size: 12px; }
     .movie-elo-badge { font-size: 10px; }
-    .btn-pick { font-size: 11px; padding: 8px 4px; border-radius: 8px; }
-    .btn-unseen { font-size: 10px; padding: 6px 4px; border-radius: 8px; }
-    .vs-label { font-size: 13px; width: 18px; }
-    .skip-btn { font-size: 11px; padding: 5px 12px; }
+    .btn-pick { font-size: 14px; padding: 14px 4px; border-radius: 10px; min-height: 48px; }
+    .btn-unseen { font-size: 12px; padding: 10px 4px; border-radius: 10px; min-height: 44px; }
+    .vs-label { font-size: 14px; width: 20px; }
+    .skip-btn { font-size: 13px; padding: 10px 16px; min-height: 44px; }
 
     /* Taste profile card - stack vertically */
     .taste-profile-wrap { flex-direction: column !important; }
@@ -354,8 +355,8 @@
     .my-poster { width: 64px; height: 96px; }
     .my-title { font-size: 10px; height: 2.6em; }
     .badge { font-size: 9px; padding: 2px 6px; }
-    .seen-toggle-wrap { gap: 3px; }
-    .toggle-seen-btn { font-size: 9px; padding: 2px 5px; }
+    .seen-toggle-wrap { gap: 4px; }
+    .toggle-seen-btn { font-size: 11px; padding: 6px 8px; min-height: 36px; }
 
     /* Top 5 podium */
     .top5-podium { grid-template-columns: repeat(5, 1fr); gap: 6px; }
@@ -367,8 +368,60 @@
     .friends-grid { grid-template-columns: repeat(2, 1fr); }
 
     /* Leaderboard table */
-    .lb-table th, .lb-table td { padding: 6px 6px; font-size: 11px; }
+    .lb-table th, .lb-table td { padding: 8px 6px; font-size: 12px; }
     .lb-poster-sm { width: 24px; height: 36px; }
+
+    /* Selects and inputs — 16px prevents iOS zoom */
+    select, input, textarea { font-size: 16px !important; }
+    .lb-filter select { font-size: 16px; }
+    .float-chat-input { font-size: 16px; }
+    .chat-input { font-size: 16px; }
+
+    /* Float chat — full-width on mobile */
+    .float-chat-btn { bottom: 16px; right: 16px; width: 52px; height: 52px; font-size: 22px; }
+    .float-chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 80px; max-height: 55vh; }
+
+    /* Summary overlay */
+    .summary-box { padding: 1.25rem 1rem; }
+    .summary-box h2 { font-size: 20px; }
+
+    /* Modal */
+    .movie-modal-box { margin: 12px; padding: 1rem; border-radius: 12px; }
+  }
+
+  /* Game fullscreen lock — applied when a game is active */
+  body.game-active {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+  body.game-active #app {
+    overflow: hidden;
+  }
+  .game-fullscreen-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: #0c0c0e;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    touch-action: none;
+  }
+  .game-fullscreen-inner {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+  }
+  .game-fullscreen-inner canvas {
+    display: block;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1;
+    object-fit: contain;
   }
 </style>
 </head>
@@ -641,6 +694,15 @@ async function saveMatchupToDB(player, idA, idB) {
       body: JSON.stringify(row)
     });
   } catch(e) { console.error('Matchup save error:', e); }
+}
+
+async function deleteMatchupPairsFromDB(player, movieId) {
+  // Delete all matchup rows where this movie appears as movie_a or movie_b
+  // This keeps the DB in sync when a movie is marked as seen (pairs need to be re-voted)
+  try {
+    await sbFetch(`/rest/v1/matchups?player=eq.${encodeURIComponent(player)}&movie_a=eq.${encodeURIComponent(movieId)}`, { method: 'DELETE' });
+    await sbFetch(`/rest/v1/matchups?player=eq.${encodeURIComponent(player)}&movie_b=eq.${encodeURIComponent(movieId)}`, { method: 'DELETE' });
+  } catch(e) { console.error('Matchup delete error:', e); }
 }
 
 // ---------- Local state ----------
@@ -1132,6 +1194,8 @@ function markSeen(id) {
   renderMyMovies();
   renderMatchup();
   saveRowToDb(player, id);
+  // Sync DB — delete matchup rows so they don't get reloaded and block new pairs on mobile
+  deleteMatchupPairsFromDB(player, id);
 }
 
 function showSessionSummary() {
@@ -1455,6 +1519,8 @@ function toggleSeen(id, markAsSeen) {
   if (markAsSeen) {
     // Remove any playedPairs involving this movie so it gets fresh matchups against all seen movies
     p.playedPairs = (p.playedPairs || []).filter(key => !key.includes(id));
+    // Sync DB — delete matchup rows so they don't get reloaded and block new pairs on mobile
+    deleteMatchupPairsFromDB(player, id);
   }
   saveRowToDb(player, id);
   renderMyMovies();
@@ -1596,7 +1662,7 @@ function renderMatchup() {
   <div class="social-strip" style="margin-bottom:0.5rem;margin-top:-0.25rem">
     <div class="social-item">
       <div class="social-label">Voted</div>
-      <div class="social-val">${p.matchCount}</div>
+      <div class="social-val">${totalUniquePairs - remainingPairs}</div>
     </div>
     <div class="social-divider"></div>
     <div class="social-item">
@@ -1628,7 +1694,7 @@ function renderMatchup() {
   <div style="margin-bottom:0.6rem;">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px;">
       <span style="font-size:11px;color:#7a6a40;text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Progress</span>
-      <span style="font-size:13px;font-weight:700;color:#c8a040">${p.matchCount} <span style="color:#555;font-weight:400;font-size:11px">of</span> ${totalUniquePairs}</span>
+      <span style="font-size:13px;font-weight:700;color:#c8a040">${totalUniquePairs - remainingPairs} <span style="color:#555;font-weight:400;font-size:11px">of</span> ${totalUniquePairs}</span>
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
     <div style="text-align:right;font-size:10px;color:#555;margin-top:3px">${pct}% complete</div>
@@ -1901,7 +1967,7 @@ async function renderMyMovies(forcePlayer) {
   }
   const searchBar = `<div style="position:relative;margin-bottom:1rem">
     <input id="mymovies-search" type="text" placeholder="Search movies..." autocomplete="off"
-      style="width:100%;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:10px 14px 10px 36px;font-size:14px;color:#f0f0f0;outline:none;box-sizing:border-box"
+      style="width:100%;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:10px 14px 10px 36px;font-size:16px;color:#f0f0f0;outline:none;box-sizing:border-box"
       oninput="filterMyMovies(this.value)"
       onfocus="this.style.borderColor='#6a5a20'"
       onblur="this.style.borderColor='#3a3010'"/>
@@ -2159,6 +2225,7 @@ let lastChatId = null;
 // RENDER ARCADE HUB
 // ═══════════════════════════════════════════════════════
 async function renderArcade() {
+  unlockGameScroll(); // always unlock when returning to arcade menu
   const el = document.getElementById('arcade-content');
   const player = getPlayer();
 
@@ -2366,8 +2433,23 @@ async function sendChat() { return sendFloatChat(); }
 // ═══════════════════════════════════════════════════════
 // ARCADE GAME ROUTER
 // ═══════════════════════════════════════════════════════
+function lockGameScroll() {
+  document.body.classList.add('game-active');
+  // Prevent touchmove scroll on iOS while game is active
+  document.body._gameScrollHandler = e => e.preventDefault();
+  document.body.addEventListener('touchmove', document.body._gameScrollHandler, { passive: false });
+}
+function unlockGameScroll() {
+  document.body.classList.remove('game-active');
+  if (document.body._gameScrollHandler) {
+    document.body.removeEventListener('touchmove', document.body._gameScrollHandler);
+    document.body._gameScrollHandler = null;
+  }
+}
+
 function startArcadeGame(gameId) {
   if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
+  lockGameScroll();
   arcadeState = { game: gameId, score: 0, question: 0, total: 10, answers: [], data: [] };
   if (gameId === 'runner') startRunner();
   if (gameId === 'memory') startMemory();
@@ -2378,6 +2460,7 @@ function startArcadeGame(gameId) {
 }
 
 function backToArcade() {
+  unlockGameScroll();
   if (chatPollInterval) clearInterval(chatPollInterval);
   if (runnerAnimFrame) cancelAnimationFrame(runnerAnimFrame);
   if (catchAnimFrame) cancelAnimationFrame(catchAnimFrame);
@@ -2415,15 +2498,17 @@ let runnerAnimFrame = null;
 function startRunner() {
   const el = document.getElementById('arcade-content');
   el.innerHTML = `
-    <div style="background:#0c0c0e;border:1px solid #3a3010;border-radius:14px;overflow:hidden;position:relative">
-      <canvas id="runner-canvas" width="600" height="400" style="display:block;width:100%;max-width:600px;margin:0 auto;cursor:pointer;image-rendering:auto"></canvas>
-      <div id="runner-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.85)">
-        <div style="font-size:32px;margin-bottom:8px">🎬</div>
-        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Cinema Runner</div>
-        <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:260px">Run through the cinema! Dodge movie posters that stick out from the walls.</div>
-        <div style="font-size:12px;color:#555;margin-bottom:16px">Press SPACE or tap to jump</div>
-        <button class="arcade-btn" onclick="runnerStart()">Start Running →</button>
-        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+    <div class="game-fullscreen-wrap">
+      <div class="game-fullscreen-inner" style="position:relative">
+        <canvas id="runner-canvas" width="600" height="400" style="cursor:pointer;image-rendering:auto"></canvas>
+        <div id="runner-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.85)">
+          <div style="font-size:32px;margin-bottom:8px">🎬</div>
+          <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Cinema Runner</div>
+          <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:260px">Run through the cinema! Dodge movie posters that stick out from the walls.</div>
+          <div style="font-size:12px;color:#555;margin-bottom:16px">Press SPACE or tap to jump</div>
+          <button class="arcade-btn" onclick="runnerStart()">Start Running →</button>
+          <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+        </div>
       </div>
     </div>`;
   setupRunnerCanvas();
@@ -2820,7 +2905,8 @@ function renderMemory() {
   const el = document.getElementById('arcade-content');
   const { cards, timeLeft, moves, matches } = memoryState;
   el.innerHTML = `
-    <div class="arcade-game">
+    <div class="game-fullscreen-wrap" style="overflow-y:auto;-webkit-overflow-scrolling:touch">
+      <div class="arcade-game" style="min-height:100%;box-sizing:border-box">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
         <button class="arcade-btn-secondary" onclick="clearInterval(memoryState.timer);backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
         <div style="display:flex;gap:16px;align-items:center">
@@ -2837,6 +2923,7 @@ function renderMemory() {
               : `<div style="width:100%;height:100%;background:#1a1a1e;border-radius:8px;border:1px solid #3a3010;display:flex;align-items:center;justify-content:center;font-size:28px">🎬</div>`
             }
           </div>`).join('')}
+      </div>
       </div>
     </div>`;
 }
@@ -2893,15 +2980,17 @@ let catchAnimFrame = null;
 function startCatch() {
   const el = document.getElementById('arcade-content');
   el.innerHTML = `
-    <div style="background:#0c0c0e;border:1px solid #3a3010;border-radius:14px;overflow:hidden;position:relative">
-      <canvas id="catch-canvas" width="600" height="420" style="display:block;width:100%;max-width:600px;margin:0 auto;cursor:pointer"></canvas>
-      <div id="catch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
-        <div style="font-size:32px;margin-bottom:8px">🎪</div>
-        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Poster Catch</div>
-        <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:280px">Catch the movie posters that match the prompt! Move your basket left and right.</div>
-        <div style="font-size:12px;color:#555;margin-bottom:16px">← → arrow keys or tap left/right sides</div>
-        <button class="arcade-btn" onclick="catchStart()">Start Catching →</button>
-        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+    <div class="game-fullscreen-wrap">
+      <div class="game-fullscreen-inner" style="position:relative">
+        <canvas id="catch-canvas" width="600" height="420" style="cursor:pointer"></canvas>
+        <div id="catch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
+          <div style="font-size:32px;margin-bottom:8px">🎪</div>
+          <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Poster Catch</div>
+          <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:280px">Catch the movie posters that match the prompt! Move your basket left and right.</div>
+          <div style="font-size:12px;color:#555;margin-bottom:16px">← → arrow keys or tap left/right sides</div>
+          <button class="arcade-btn" onclick="catchStart()">Start Catching →</button>
+          <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+        </div>
       </div>
     </div>`;
   setupCatchCanvas();
@@ -3178,15 +3267,17 @@ let rofAnimFrame = null;
 function startRottenOrFresh() {
   const el = document.getElementById('arcade-content');
   el.innerHTML = `
-    <div style="background:#0c0c0e;border:1px solid #3a3010;border-radius:14px;overflow:hidden;position:relative">
-      <canvas id="rof-canvas" width="600" height="420" style="display:block;width:100%;max-width:600px;margin:0 auto"></canvas>
-      <div id="rof-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
-        <div style="font-size:40px;margin-bottom:8px">🍅🍿</div>
-        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Rotten or Fresh?</div>
-        <div style="font-size:13px;color:#777;margin-bottom:16px;text-align:center;max-width:280px">Catch the 🍿 popcorn, dodge the 🍅 tomatoes! Move up/down to dodge.</div>
-        <div style="font-size:12px;color:#555;margin-bottom:16px">Arrow keys or WASD · mouse to follow · drag on mobile</div>
-        <button class="arcade-btn" onclick="rofStart()">Start!</button>
-        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+    <div class="game-fullscreen-wrap">
+      <div class="game-fullscreen-inner" style="position:relative">
+        <canvas id="rof-canvas" width="600" height="420"></canvas>
+        <div id="rof-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
+          <div style="font-size:40px;margin-bottom:8px">🍅🍿</div>
+          <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Rotten or Fresh?</div>
+          <div style="font-size:13px;color:#777;margin-bottom:16px;text-align:center;max-width:280px">Catch the 🍿 popcorn, dodge the 🍅 tomatoes! Move up/down to dodge.</div>
+          <div style="font-size:12px;color:#555;margin-bottom:16px">Arrow keys or WASD · mouse to follow · drag on mobile</div>
+          <button class="arcade-btn" onclick="rofStart()">Start!</button>
+          <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+        </div>
       </div>
     </div>`;
   const canvas = document.getElementById('rof-canvas');
@@ -3375,9 +3466,10 @@ const SNAKE_MOVIES = Object.entries(BOX_OFFICE_DATA)
 function startSnake() {
   const el = document.getElementById('arcade-content');
   el.innerHTML = `
-    <div style="background:#0c0c0e;border:1px solid #3a3010;border-radius:14px;overflow:hidden;position:relative">
-      <canvas id="snake-canvas" width="600" height="500" style="display:block;width:100%;max-width:600px;margin:0 auto"></canvas>
-      <div id="snake-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
+    <div class="game-fullscreen-wrap">
+      <div class="game-fullscreen-inner" style="position:relative">
+        <canvas id="snake-canvas" width="600" height="500"></canvas>
+        <div id="snake-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
         <div style="font-size:40px;margin-bottom:8px">🐍🎬</div>
         <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Box Office Snake</div>
         <div style="font-size:13px;color:#777;margin-bottom:4px;text-align:center;max-width:280px">Eat movie posters from lowest to highest box office gross.</div>
@@ -3385,6 +3477,7 @@ function startSnake() {
         <div style="font-size:12px;color:#555;margin-bottom:16px">Arrow keys or swipe</div>
         <button class="arcade-btn" onclick="snakeStart()">Start!</button>
         <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
+        </div>
       </div>
     </div>`;
 
@@ -3595,12 +3688,14 @@ function snakeLoop() {
 // ═══════════════════════════════════════════════════════
 function startDirectorCut() {
   const el = document.getElementById('arcade-content');
-  el.innerHTML = `<div class="arcade-game">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
-      <span style="font-size:13px;color:#777">Tap when the clapper snaps shut!</span>
+  el.innerHTML = `<div class="game-fullscreen-wrap" style="overflow-y:auto;-webkit-overflow-scrolling:touch">
+    <div class="arcade-game" style="min-height:100%;box-sizing:border-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
+        <span style="font-size:13px;color:#777">Tap when the clapper snaps shut!</span>
+      </div>
+      <div id="dc-game" style="text-align:center"></div>
     </div>
-    <div id="dc-game" style="text-align:center"></div>
   </div>`;
   dcState = { score: 0, round: 0, total: 10, active: false };
   dcTimeout = null;
