@@ -388,41 +388,26 @@
     /* Modal */
     .movie-modal-box { margin: 12px; padding: 1rem; border-radius: 12px; }
   }
-
-  /* Game fullscreen lock — applied when a game is active */
-  body.game-active {
-    overflow: hidden;
-    position: fixed;
-    width: 100%;
-    height: 100%;
-  }
-  body.game-active #app {
-    overflow: hidden;
-  }
-  .game-fullscreen-wrap {
+  #game-overlay {
     position: fixed;
     inset: 0;
-    z-index: 200;
+    z-index: 300;
     background: #0c0c0e;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     touch-action: none;
   }
-  .game-fullscreen-inner {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding: 0;
-  }
-  .game-fullscreen-inner canvas {
+  #game-overlay canvas {
     display: block;
     width: 100% !important;
     max-width: 100% !important;
+    height: auto !important;
     flex: 1;
-    object-fit: contain;
+    min-height: 0;
   }
+
+
 </style>
 </head>
 <body>
@@ -494,6 +479,9 @@
   <div id="tab-mymovies" style="display:none"><div id="my-content"></div></div>
   <div id="tab-friends" style="display:none"><div id="friends-content"></div></div>
   <div id="tab-arcade" style="display:none"><div id="arcade-content"></div></div>
+
+<!-- Fullscreen game overlay -->
+<div id="game-overlay" style="display:none"></div>
 </div>
 
 <!-- Floating Chat -->
@@ -2433,19 +2421,20 @@ async function sendChat() { return sendFloatChat(); }
 // ═══════════════════════════════════════════════════════
 // ARCADE GAME ROUTER
 // ═══════════════════════════════════════════════════════
-function lockGameScroll() {
-  document.body.classList.add('game-active');
-  // Prevent touchmove scroll on iOS while game is active
-  document.body._gameScrollHandler = e => e.preventDefault();
-  document.body.addEventListener('touchmove', document.body._gameScrollHandler, { passive: false });
+function openGameOverlay(html) {
+  const ov = document.getElementById('game-overlay');
+  ov.innerHTML = html;
+  ov.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
-function unlockGameScroll() {
-  document.body.classList.remove('game-active');
-  if (document.body._gameScrollHandler) {
-    document.body.removeEventListener('touchmove', document.body._gameScrollHandler);
-    document.body._gameScrollHandler = null;
-  }
+function closeGameOverlay() {
+  const ov = document.getElementById('game-overlay');
+  ov.style.display = 'none';
+  ov.innerHTML = '';
+  document.body.style.overflow = '';
 }
+function lockGameScroll() { /* handled by openGameOverlay */ }
+function unlockGameScroll() { /* handled by closeGameOverlay */ }
 
 function startArcadeGame(gameId) {
   if (chatPollInterval) { clearInterval(chatPollInterval); chatPollInterval = null; }
@@ -2460,7 +2449,7 @@ function startArcadeGame(gameId) {
 }
 
 function backToArcade() {
-  unlockGameScroll();
+  closeGameOverlay();
   if (chatPollInterval) clearInterval(chatPollInterval);
   if (runnerAnimFrame) cancelAnimationFrame(runnerAnimFrame);
   if (catchAnimFrame) cancelAnimationFrame(catchAnimFrame);
@@ -2496,21 +2485,18 @@ async function saveArcadeScore(game, score) {
 let runnerAnimFrame = null;
 
 function startRunner() {
-  const el = document.getElementById('arcade-content');
-  el.innerHTML = `
-    <div class="game-fullscreen-wrap">
-      <div class="game-fullscreen-inner" style="position:relative">
-        <canvas id="runner-canvas" width="600" height="400" style="cursor:pointer;image-rendering:auto"></canvas>
-        <div id="runner-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.85)">
-          <div style="font-size:32px;margin-bottom:8px">🎬</div>
-          <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Cinema Runner</div>
-          <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:260px">Run through the cinema! Dodge movie posters that stick out from the walls.</div>
-          <div style="font-size:12px;color:#555;margin-bottom:16px">Press SPACE or tap to jump</div>
-          <button class="arcade-btn" onclick="runnerStart()">Start Running →</button>
-          <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
-        </div>
+  openGameOverlay(`
+    <div style="position:relative;width:100%;flex:1;min-height:0">
+      <canvas id="runner-canvas" width="600" height="400" style="display:block;width:100%;height:100%;object-fit:contain;cursor:pointer;image-rendering:auto"></canvas>
+      <div id="runner-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.85)">
+        <div style="font-size:32px;margin-bottom:8px">🎬</div>
+        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Cinema Runner</div>
+        <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:260px">Run through the cinema! Dodge movie posters that stick out from the walls.</div>
+        <div style="font-size:12px;color:#555;margin-bottom:16px">Press SPACE or tap to jump</div>
+        <button class="arcade-btn" onclick="runnerStart()">Start Running →</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
       </div>
-    </div>`;
+    </div>`);
   setupRunnerCanvas();
 }
 
@@ -2588,8 +2574,8 @@ function runnerLoop(timestamp) {
     window.runnerGameActive = false;
     document.removeEventListener('keydown', runnerKeyHandler);
     saveArcadeScore('runner', s.score);
-    const el = document.getElementById('arcade-content');
-    el.innerHTML = `<div class="arcade-game" style="text-align:center">
+    const el = document.getElementById('game-overlay');
+    el.innerHTML = `<div class="arcade-game" style="text-align:center;width:100%;box-sizing:border-box">
       <div style="font-size:48px;margin-bottom:8px">🎬</div>
       <div class="arcade-game-title">Game Over!</div>
       <div class="arcade-score-display">${s.score}</div>
@@ -2855,12 +2841,14 @@ document.addEventListener('touchstart', e => {
   runnerTouchX = e.touches[0].clientX;
   // Instant lane switch on tap side - don't wait for touchend
   if (!window.runnerGameActive) return;
+  e.preventDefault(); // prevent scroll during game
   const screenW = window.innerWidth;
   const x = e.touches[0].clientX;
   if (x < screenW * 0.33) runnerChangeLane(-1);       // left third = go left
   else if (x > screenW * 0.66) runnerChangeLane(1);   // right third = go right
   // center third = no immediate action, wait for swipe
-}, { passive: true });
+}, { passive: false });
+
 document.addEventListener('touchend', e => {
   if (!window.runnerGameActive) return;
   const dx = e.changedTouches[0].clientX - runnerTouchStartX;
@@ -2874,7 +2862,8 @@ document.addEventListener('touchend', e => {
 let memoryState = {};
 
 function startMemory() {
-  const el = document.getElementById('arcade-content');
+  openGameOverlay('');
+  const el = document.getElementById('game-overlay');
   // Pick 6 movies, make pairs = 12 cards
   const chosen = [...MOVIES].sort(() => Math.random() - 0.5).slice(0, 6);
   const cards = [...chosen, ...chosen]
@@ -2902,11 +2891,11 @@ function startMemory() {
 }
 
 function renderMemory() {
-  const el = document.getElementById('arcade-content');
+  const _ov = document.getElementById('game-overlay');
+  const el = (_ov && _ov.style.display !== 'none') ? _ov : document.getElementById('arcade-content');
   const { cards, timeLeft, moves, matches } = memoryState;
   el.innerHTML = `
-    <div class="game-fullscreen-wrap" style="overflow-y:auto;-webkit-overflow-scrolling:touch">
-      <div class="arcade-game" style="min-height:100%;box-sizing:border-box">
+    <div class="arcade-game">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
         <button class="arcade-btn-secondary" onclick="clearInterval(memoryState.timer);backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
         <div style="display:flex;gap:16px;align-items:center">
@@ -2923,7 +2912,6 @@ function renderMemory() {
               : `<div style="width:100%;height:100%;background:#1a1a1e;border-radius:8px;border:1px solid #3a3010;display:flex;align-items:center;justify-content:center;font-size:28px">🎬</div>`
             }
           </div>`).join('')}
-      </div>
       </div>
     </div>`;
 }
@@ -2958,8 +2946,8 @@ function flipCard(idx) {
 
 function endMemory(won) {
   saveArcadeScore('memory', memoryState.score);
-  const el = document.getElementById('arcade-content');
-  el.innerHTML = `<div class="arcade-game" style="text-align:center">
+  const el = document.getElementById('game-overlay');
+  el.innerHTML = `<div class="arcade-game" style="text-align:center;width:100%;box-sizing:border-box">
     <div style="font-size:48px;margin-bottom:8px">${won ? '🎉' : '⏰'}</div>
     <div class="arcade-game-title">${won ? 'All matched!' : 'Time\'s up!'}</div>
     <div class="arcade-score-display">${memoryState.score}</div>
@@ -2978,21 +2966,18 @@ function endMemory(won) {
 let catchAnimFrame = null;
 
 function startCatch() {
-  const el = document.getElementById('arcade-content');
-  el.innerHTML = `
-    <div class="game-fullscreen-wrap">
-      <div class="game-fullscreen-inner" style="position:relative">
-        <canvas id="catch-canvas" width="600" height="420" style="cursor:pointer"></canvas>
-        <div id="catch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
-          <div style="font-size:32px;margin-bottom:8px">🎪</div>
-          <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Poster Catch</div>
-          <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:280px">Catch the movie posters that match the prompt! Move your basket left and right.</div>
-          <div style="font-size:12px;color:#555;margin-bottom:16px">← → arrow keys or tap left/right sides</div>
-          <button class="arcade-btn" onclick="catchStart()">Start Catching →</button>
-          <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
-        </div>
+  openGameOverlay(`
+    <div style="position:relative;width:100%;flex:1;min-height:0">
+      <canvas id="catch-canvas" width="600" height="420" style="display:block;width:100%;height:100%;object-fit:contain;cursor:pointer"></canvas>
+      <div id="catch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
+        <div style="font-size:32px;margin-bottom:8px">🎪</div>
+        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Poster Catch</div>
+        <div style="font-size:13px;color:#777;margin-bottom:20px;text-align:center;max-width:280px">Catch the movie posters that match the prompt! Move your basket left and right.</div>
+        <div style="font-size:12px;color:#555;margin-bottom:16px">← → arrow keys or tap left/right sides</div>
+        <button class="arcade-btn" onclick="catchStart()">Start Catching →</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
       </div>
-    </div>`;
+    </div>`);
   setupCatchCanvas();
 }
 
@@ -3018,6 +3003,7 @@ function setupCatchCanvas() {
     if (x < canvas.width / 2) catchKeysHeld.left = true;
     else catchKeysHeld.right = true;
   }, { passive: false });
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); }, { passive: false });
   canvas.addEventListener('touchend', e => {
     catchKeysHeld.left = false; catchKeysHeld.right = false;
   }, { passive: true });
@@ -3088,8 +3074,8 @@ function catchLoop(timestamp) {
     window.catchGameActive = false;
     document.removeEventListener('keydown', catchKeyHandler);
     saveArcadeScore('catch', s.score);
-    const el = document.getElementById('arcade-content');
-    el.innerHTML = `<div class="arcade-game" style="text-align:center">
+    const el = document.getElementById('game-overlay');
+    el.innerHTML = `<div class="arcade-game" style="text-align:center;width:100%;box-sizing:border-box">
       <div style="font-size:48px;margin-bottom:8px">🎪</div>
       <div class="arcade-game-title">Game Over!</div>
       <div class="arcade-score-display">${s.score}</div>
@@ -3265,24 +3251,22 @@ function catchLoop(timestamp) {
 let rofAnimFrame = null;
 
 function startRottenOrFresh() {
-  const el = document.getElementById('arcade-content');
-  el.innerHTML = `
-    <div class="game-fullscreen-wrap">
-      <div class="game-fullscreen-inner" style="position:relative">
-        <canvas id="rof-canvas" width="600" height="420"></canvas>
-        <div id="rof-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
-          <div style="font-size:40px;margin-bottom:8px">🍅🍿</div>
-          <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Rotten or Fresh?</div>
-          <div style="font-size:13px;color:#777;margin-bottom:16px;text-align:center;max-width:280px">Catch the 🍿 popcorn, dodge the 🍅 tomatoes! Move up/down to dodge.</div>
-          <div style="font-size:12px;color:#555;margin-bottom:16px">Arrow keys or WASD · mouse to follow · drag on mobile</div>
-          <button class="arcade-btn" onclick="rofStart()">Start!</button>
-          <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
-        </div>
+  openGameOverlay(`
+    <div style="position:relative;width:100%;flex:1;min-height:0">
+      <canvas id="rof-canvas" width="600" height="420" style="display:block;width:100%;height:100%;object-fit:contain"></canvas>
+      <div id="rof-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
+        <div style="font-size:40px;margin-bottom:8px">🍅🍿</div>
+        <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Rotten or Fresh?</div>
+        <div style="font-size:13px;color:#777;margin-bottom:16px;text-align:center;max-width:280px">Catch the 🍿 popcorn, dodge the 🍅 tomatoes! Move up/down to dodge.</div>
+        <div style="font-size:12px;color:#555;margin-bottom:16px">Arrow keys or WASD · mouse to follow · drag on mobile</div>
+        <button class="arcade-btn" onclick="rofStart()">Start!</button>
+        <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
       </div>
-    </div>`;
+    </div>`);
   const canvas = document.getElementById('rof-canvas');
   canvas.addEventListener('click', () => { if (!window.rofActive) rofStart(); });
   // Touch drag
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); }, { passive: false });
   canvas.addEventListener('touchmove', e => {
     if (!window.rofActive) return;
     e.preventDefault();
@@ -3341,7 +3325,7 @@ function rofLoop(timestamp) {
     window.rofActive = false;
     document.removeEventListener('keydown', rofKeyHandler);
     saveArcadeScore('rottenorfresh', s.score);
-    document.getElementById('arcade-content').innerHTML = `<div class="arcade-game" style="text-align:center">
+    document.getElementById('game-overlay').innerHTML = `<div class="arcade-game" style="text-align:center;width:100%;box-sizing:border-box">
       <div style="font-size:48px;margin-bottom:8px">${s.score > 20 ? '🌟' : '🍅'}</div>
       <div class="arcade-game-title">Game Over!</div>
       <div class="arcade-score-display">${s.score}</div>
@@ -3464,12 +3448,10 @@ const SNAKE_MOVIES = Object.entries(BOX_OFFICE_DATA)
   .filter(e => e.movie);
 
 function startSnake() {
-  const el = document.getElementById('arcade-content');
-  el.innerHTML = `
-    <div class="game-fullscreen-wrap">
-      <div class="game-fullscreen-inner" style="position:relative">
-        <canvas id="snake-canvas" width="600" height="500"></canvas>
-        <div id="snake-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
+  openGameOverlay(`
+    <div style="position:relative;width:100%;flex:1;min-height:0">
+      <canvas id="snake-canvas" width="600" height="500" style="display:block;width:100%;height:100%;object-fit:contain"></canvas>
+      <div id="snake-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
         <div style="font-size:40px;margin-bottom:8px">🐍🎬</div>
         <div style="font-size:18px;font-weight:700;color:#f0f0f0;margin-bottom:6px">Box Office Snake</div>
         <div style="font-size:13px;color:#777;margin-bottom:4px;text-align:center;max-width:280px">Eat movie posters from lowest to highest box office gross.</div>
@@ -3477,14 +3459,14 @@ function startSnake() {
         <div style="font-size:12px;color:#555;margin-bottom:16px">Arrow keys or swipe</div>
         <button class="arcade-btn" onclick="snakeStart()">Start!</button>
         <button class="arcade-btn-secondary" onclick="backToArcade()" style="margin-top:8px">Back</button>
-        </div>
       </div>
-    </div>`;
+    </div>`);
 
   const canvas = document.getElementById('snake-canvas');
   document.addEventListener('keydown', snakeKeyHandler);
   let swipeStart = null;
-  canvas.addEventListener('touchstart', e => { swipeStart = {x: e.touches[0].clientX, y: e.touches[0].clientY}; }, {passive:true});
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); swipeStart = {x: e.touches[0].clientX, y: e.touches[0].clientY}; }, {passive:false});
+  canvas.addEventListener('touchmove', e => { e.preventDefault(); }, {passive:false});
   canvas.addEventListener('touchend', e => {
     if (!swipeStart) return;
     const dx = e.changedTouches[0].clientX - swipeStart.x;
@@ -3614,7 +3596,7 @@ function snakeLoop() {
     window.snakeActive = false;
     document.removeEventListener('keydown', snakeKeyHandler);
     saveArcadeScore('snake', s.score);
-    document.getElementById('arcade-content').innerHTML = `<div class="arcade-game" style="text-align:center">
+    document.getElementById('game-overlay').innerHTML = `<div class="arcade-game" style="text-align:center;width:100%;box-sizing:border-box">
       <div style="font-size:48px;margin-bottom:8px">🐍</div>
       <div class="arcade-game-title">Game Over!</div>
       <div class="arcade-score-display">${s.score}</div>
@@ -3687,15 +3669,15 @@ function snakeLoop() {
 // Clapper boards fall, tap at exact moment they snap shut
 // ═══════════════════════════════════════════════════════
 function startDirectorCut() {
-  const el = document.getElementById('arcade-content');
-  el.innerHTML = `<div class="game-fullscreen-wrap" style="overflow-y:auto;-webkit-overflow-scrolling:touch">
-    <div class="arcade-game" style="min-height:100%;box-sizing:border-box">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-        <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
-        <span style="font-size:13px;color:#777">Tap when the clapper snaps shut!</span>
-      </div>
-      <div id="dc-game" style="text-align:center"></div>
+  openGameOverlay('');
+  const el = document.getElementById('game-overlay');
+  el.style.overflowY = 'auto';
+  el.innerHTML = `<div class="arcade-game" style="width:100%;box-sizing:border-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
+      <span style="font-size:13px;color:#777">Tap when the clapper snaps shut!</span>
     </div>
+    <div id="dc-game" style="text-align:center"></div>
   </div>`;
   dcState = { score: 0, round: 0, total: 10, active: false };
   dcTimeout = null;
