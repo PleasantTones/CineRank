@@ -392,19 +392,36 @@
     position: fixed;
     inset: 0;
     z-index: 300;
-    background: #0c0c0e;
+    background: rgba(0,0,0,0.92);
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
     overflow: hidden;
     touch-action: none;
+    padding: 16px;
+    box-sizing: border-box;
+  }
+  #game-overlay > div {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
   }
   #game-overlay canvas {
     display: block;
     width: 100% !important;
-    max-width: 100% !important;
     height: auto !important;
-    flex: 1;
-    min-height: 0;
+    max-height: calc(100vh - 32px);
+    object-fit: contain;
+  }
+  /* text-based games (memory, directorcut) scroll within overlay */
+  #game-overlay .arcade-game {
+    overflow-y: auto;
+    max-height: calc(100vh - 32px);
+    -webkit-overflow-scrolling: touch;
   }
 
 
@@ -2486,7 +2503,7 @@ let runnerAnimFrame = null;
 
 function startRunner() {
   openGameOverlay(`
-    <div style="position:relative;width:100%;flex:1;min-height:0">
+    <div style="position:relative">
       <canvas id="runner-canvas" width="600" height="400" style="display:block;width:100%;height:100%;object-fit:contain;cursor:pointer;image-rendering:auto"></canvas>
       <div id="runner-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.85)">
         <div style="font-size:32px;margin-bottom:8px">🎬</div>
@@ -2967,7 +2984,7 @@ let catchAnimFrame = null;
 
 function startCatch() {
   openGameOverlay(`
-    <div style="position:relative;width:100%;flex:1;min-height:0">
+    <div style="position:relative">
       <canvas id="catch-canvas" width="600" height="420" style="display:block;width:100%;height:100%;object-fit:contain;cursor:pointer"></canvas>
       <div id="catch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
         <div style="font-size:32px;margin-bottom:8px">🎪</div>
@@ -3252,7 +3269,7 @@ let rofAnimFrame = null;
 
 function startRottenOrFresh() {
   openGameOverlay(`
-    <div style="position:relative;width:100%;flex:1;min-height:0">
+    <div style="position:relative">
       <canvas id="rof-canvas" width="600" height="420" style="display:block;width:100%;height:100%;object-fit:contain"></canvas>
       <div id="rof-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
         <div style="font-size:40px;margin-bottom:8px">🍅🍿</div>
@@ -3449,7 +3466,7 @@ const SNAKE_MOVIES = Object.entries(BOX_OFFICE_DATA)
 
 function startSnake() {
   openGameOverlay(`
-    <div style="position:relative;width:100%;flex:1;min-height:0">
+    <div style="position:relative">
       <canvas id="snake-canvas" width="600" height="500" style="display:block;width:100%;height:100%;object-fit:contain"></canvas>
       <div id="snake-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(12,12,14,0.88)">
         <div style="font-size:40px;margin-bottom:8px">🐍🎬</div>
