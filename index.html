@@ -4266,13 +4266,26 @@ async function renderHallOfFame() {
     const bH=3;
     // ceiling border removed
 
-    // Floor
+    // Floor — red carpet
     const fg=ctx.createLinearGradient(0,horizonY,0,H);
-    fg.addColorStop(0,'#c0a870');fg.addColorStop(0.45,'#907040');fg.addColorStop(1,'#402810');
+    fg.addColorStop(0,'#c0282a');fg.addColorStop(0.4,'#9a1c1e');fg.addColorStop(0.75,'#6e1214');fg.addColorStop(1,'#3a0808');
     ctx.fillStyle=fg;ctx.fillRect(0,horizonY,W,H-horizonY);
-    ctx.strokeStyle='rgba(70,48,16,0.16)';ctx.lineWidth=1;
-    for(let x=-4;x<=4;x++){ctx.beginPath();ctx.moveTo(W/2+x*W/3.5,H);ctx.lineTo(W/2,horizonY);ctx.stroke();}
-    for(let t=0.12;t<1;t+=0.18){const y=horizonY+t*(H-horizonY);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    // Carpet pile sheen — subtle light reflection down the center
+    const cs=ctx.createLinearGradient(W*0.2,horizonY,W*0.8,H);
+    cs.addColorStop(0,'rgba(255,180,160,0.0)');cs.addColorStop(0.3,'rgba(255,160,140,0.07)');
+    cs.addColorStop(0.5,'rgba(255,180,160,0.0)');cs.addColorStop(0.7,'rgba(220,100,90,0.05)');
+    cs.addColorStop(1,'rgba(255,180,160,0.0)');
+    ctx.fillStyle=cs;ctx.fillRect(0,horizonY,W,H-horizonY);
+    // Carpet weave lines — very subtle longitudinal texture
+    const vx=W*0.5,vy=horizonY;
+    for(let x=-6;x<=6;x++){
+      const fade=1-Math.abs(x)/7;
+      ctx.strokeStyle=`rgba(80,10,10,${0.18*fade})`;ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(vx+x*W*0.42,H);ctx.lineTo(vx,vy);ctx.stroke();
+    }
+    // Gold border stripe along carpet edges
+    ctx.strokeStyle='rgba(195,158,52,0.7)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(0,horizonY);ctx.lineTo(W,horizonY);ctx.stroke();
 
     // Ray cast — no directional pre-checks, just compute t and validate
     for(let col=0;col<W;col++){
@@ -4353,6 +4366,13 @@ async function renderHallOfFame() {
       else{r=230*bv;g=214*bv;bl=184*bv;}
       ctx.fillStyle=`rgb(${Math.round(r)},${Math.round(g)},${Math.round(bl)})`;
       ctx.fillRect(col,wallTop,1,wallBot-wallTop);
+      // Gold crown molding — top of side walls only (not transverse)
+      if(wallSide!==2){
+        const crownH=Math.max(1,stripH*0.045);
+        const gb=Math.max(0.4,b);
+        ctx.fillStyle=`rgba(${Math.round(208*gb)},${Math.round(162*gb)},${Math.round(42*gb)},0.92)`;
+        ctx.fillRect(col,wallTop,1,crownH);
+      }
     }
 
     // Chandeliers
