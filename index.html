@@ -2545,6 +2545,7 @@ async function renderArcade() {
     { id: 'rottenorfresh', icon: '🍅', title: 'Rotten or Fresh', desc: 'Popcorn and tomatoes fly in from all sides. Move your basket with arrow keys, mouse, or touch to catch the popcorn and dodge the tomatoes. Getting hit by a tomato costs a life.' },
     { id: 'snake', icon: '🐍', title: 'Box Office Snake', desc: 'Classic snake but you must eat movie posters from lowest to highest worldwide box office gross. The next target is always shown at the top. Wrong order or hitting a wall = game over.' },
     { id: "scramble", icon: "🔤", title: "Scrambled Title", desc: "Unscramble the movie title before time runs out! 10 rounds, faster answers = more points." },
+    { id: "quickdraw", icon: "🎯", title: "Quick Draw", desc: "Movie posters pop up on screen — tap them before they vanish! Miss 3 and it's game over. The faster you tap, the more points you earn." },
   ];
 
   let html = `<div class="section-label">Pick a game</div>
@@ -2572,12 +2573,12 @@ async function renderArcade() {
   // ── ARCADE LEADERBOARDS ──
   html += `<div class="section-label" style="margin-top:1.5rem">Arcade leaderboards</div>`;
 
-  const gameLabels = { runner: '🏃 Cinema Runner', memory: '🎭 Memory Match', catch: '🎪 Poster Catch', rottenorfresh: '🍅 Rotten or Fresh', snake: '🐍 Box Office Snake', scramble: '🔤 Scrambled Title' };
-  const maxPts = { runner: 500, memory: 900, catch: 25, rottenorfresh: 30, snake: 500, scramble: 1000 };
+  const gameLabels = { runner: '🏃 Cinema Runner', memory: '🎭 Memory Match', catch: '🎪 Poster Catch', rottenorfresh: '🍅 Rotten or Fresh', snake: '🐍 Box Office Snake', scramble: '🔤 Scrambled Title', quickdraw: '🎯 Quick Draw' };
+  const maxPts = { runner: 500, memory: 900, catch: 25, rottenorfresh: 30, snake: 500, scramble: 1000, quickdraw: 800 };
 
   html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:stretch">`;
 
-  ['runner','memory','catch','rottenorfresh','snake','scramble'].forEach(gameId => {
+  ['runner','memory','catch','rottenorfresh','snake','scramble','quickdraw'].forEach(gameId => {
     const gameScores = (scores[gameId] || []).sort((a,b) => b.score - a.score);
     const max = maxPts[gameId];
     html += `<div style="background:#111113;border:1px solid #3a3010;border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
@@ -2773,6 +2774,7 @@ function startArcadeGame(gameId) {
   if (gameId === 'rottenorfresh') startRottenOrFresh();
   if (gameId === 'snake') startSnake();
   if (gameId === 'scramble') startScramble();
+  if (gameId === 'quickdraw') startQuickDraw();
 }
 
 function backToArcade() {
@@ -4186,6 +4188,136 @@ function startScramble() {
   openGameOverlay('');
   renderRound();
 }
+
+// ═══════════════════════════════════════════════════════
+// GAME 7: QUICK DRAW
+// Movie posters pop up at random positions. Tap them before
+// they disappear. Miss 3 = game over. Speed increases.
+// ═══════════════════════════════════════════════════════
+function startQuickDraw() {
+  let score = 0, misses = 0, maxMisses = 3, active = [], animFrame = null;
+  let speed = 1600; // ms a poster stays visible
+  let spawnDelay = 1200;
+  let running = true;
+  let spawnTimeout = null;
+
+  const pool = [...MOVIES].filter(m => m.img);
+
+  function randMovie() { return pool[Math.floor(Math.random() * pool.length)]; }
+
+  function spawnPoster() {
+    if (!running) return;
+    const el = document.getElementById('qd-field');
+    if (!el) return;
+
+    const m = randMovie();
+    const W = el.offsetWidth, H = el.offsetHeight;
+    const tw = 72, th = 100;
+    const x = Math.floor(Math.random() * (W - tw - 10)) + 5;
+    const y = Math.floor(Math.random() * (H - th - 10)) + 5;
+
+    const id = 'qd-' + Date.now() + Math.random();
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'qd-poster';
+    div.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${tw}px;height:${th}px;cursor:pointer;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.6);animation:qdpop 0.15s ease;border:2px solid transparent;transition:border-color 0.1s`;
+    div.innerHTML = `<img src="${m.img}" style="width:100%;height:100%;object-fit:cover;pointer-events:none">
+      <div class="qd-timer-bar"></div>`;
+
+    let hit = false;
+    div.onclick = () => {
+      if (hit) return;
+      hit = true;
+      const elapsed = Date.now() - spawnTime;
+      const pts = Math.max(10, Math.round(100 * (1 - elapsed / speed)));
+      score += pts;
+      // Flash green
+      div.style.borderColor = '#4ade80';
+      div.style.transform = 'scale(1.12)';
+      // Floating score
+      const fp = document.createElement('div');
+      fp.textContent = '+' + pts;
+      fp.style.cssText = `position:absolute;left:${x+tw/2-12}px;top:${y-4}px;color:#4ade80;font-weight:800;font-size:15px;pointer-events:none;animation:qdfloat 0.7s ease forwards;z-index:99`;
+      el.appendChild(fp);
+      setTimeout(() => { fp.remove(); }, 700);
+      setTimeout(() => { div.remove(); }, 150);
+      document.getElementById('qd-score').textContent = score;
+      // Speed up slightly
+      speed = Math.max(600, speed - 25);
+      spawnDelay = Math.max(400, spawnDelay - 15);
+    };
+
+    const spawnTime = Date.now();
+    el.appendChild(div);
+
+    // Shrinking timer bar
+    const bar = div.querySelector('.qd-timer-bar');
+    let start = null;
+    function animBar(ts) {
+      if (!start) start = ts;
+      const prog = Math.min(1, (ts - start) / speed);
+      if (bar) bar.style.width = (100 * (1 - prog)) + '%';
+      if (prog < 1 && !hit) requestAnimationFrame(animBar);
+    }
+    requestAnimationFrame(animBar);
+
+    // Auto-remove if not tapped
+    setTimeout(() => {
+      if (!hit && document.getElementById(id)) {
+        hit = true;
+        div.remove();
+        misses++;
+        // Shake miss indicator
+        const mi = document.getElementById('qd-misses');
+        if (mi) { mi.textContent = '❌'.repeat(misses) + '⬜'.repeat(maxMisses - misses);
+          mi.style.animation = 'none'; mi.offsetHeight; mi.style.animation = 'qdshake 0.3s ease'; }
+        if (misses >= maxMisses) { endQuickDraw(); return; }
+      }
+      if (running) spawnTimeout = setTimeout(spawnPoster, spawnDelay);
+    }, speed);
+  }
+
+  async function endQuickDraw() {
+    running = false;
+    clearTimeout(spawnTimeout);
+    await saveArcadeScore('quickdraw', score);
+    openGameOverlay(`
+      <div style="text-align:center;padding:1.5rem 1rem">
+        <div style="font-size:48px;margin-bottom:0.5rem">🎯</div>
+        <div style="font-size:22px;font-weight:800;color:#f0f0f0;margin-bottom:0.25rem">Game Over</div>
+        <div style="font-size:14px;color:#888;margin-bottom:1.5rem">3 posters missed</div>
+        <div class="arcade-score-display">${score}</div>
+        <div class="arcade-score-label">points</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
+          <button class="arcade-btn" onclick="closeGameOverlay();startQuickDraw()">Play Again</button>
+          <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+        </div>
+      </div>`);
+  }
+
+  openGameOverlay(`
+    <style>
+      @keyframes qdpop { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+      @keyframes qdfloat { from{opacity:1;transform:translateY(0)} to{opacity:0;transform:translateY(-36px)} }
+      @keyframes qdshake { 0%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} 100%{transform:translateX(0)} }
+      .qd-timer-bar { position:absolute;bottom:0;left:0;height:3px;width:100%;background:#c8a040;transition:none; }
+    </style>
+    <div style="display:flex;flex-direction:column;height:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;flex-shrink:0">
+        <button class="arcade-btn-secondary" style="padding:6px 14px;font-size:12px" onclick="running=false;backToArcade()">← Back</button>
+        <span style="font-size:14px;color:#888">Score: <strong id="qd-score" style="color:#c8a040;font-size:16px">${score}</strong></span>
+        <span id="qd-misses" style="font-size:14px;letter-spacing:2px">⬜⬜⬜</span>
+      </div>
+      <div style="text-align:center;font-size:11px;color:#555;margin-bottom:6px;flex-shrink:0">Tap posters before they vanish · faster = more points</div>
+      <div id="qd-field" style="position:relative;flex:1;min-height:340px;overflow:hidden;background:#0e0e10;border-radius:10px;margin:0 8px 8px"></div>
+    </div>`);
+
+  spawnTimeout = setTimeout(spawnPoster, 400);
+}
+
+
+
+
 
 
 // ═══════════════════════════════════════════════════════
