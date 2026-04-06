@@ -309,7 +309,7 @@
   .start-voting-btn:hover { background: #357a5c; }
   .start-voting-btn:disabled { background: #1a2e22; color: #2d6a4f; cursor: default; }
   @media (max-width: 600px) {
-    #app { padding: 0.75rem 0.6rem 5rem; }
+    #app { padding: 0.75rem 0.6rem calc(5rem + env(safe-area-inset-bottom, 0px)); }
 
     /* Header */
     .header-inner { padding: 12px 16px 10px; }
@@ -378,8 +378,8 @@
     .chat-input { font-size: 16px; }
 
     /* Float chat — full-width on mobile */
-    .float-chat-btn { bottom: 16px; right: 16px; width: 52px; height: 52px; font-size: 22px; }
-    .float-chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 80px; max-height: 55vh; }
+    .float-chat-btn { bottom: calc(16px + env(safe-area-inset-bottom, 0px)); right: 16px; width: 52px; height: 52px; font-size: 22px; }
+    .float-chat-panel { width: calc(100vw - 24px); right: 12px; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); max-height: 55dvh; }
 
     /* Summary overlay */
     .summary-box { padding: 1.25rem 1rem; }
@@ -401,6 +401,9 @@
     touch-action: none;
     padding: 16px;
     box-sizing: border-box;
+    /* dvh accounts for iOS Safari browser chrome shrinking/growing */
+    height: 100vh;
+    height: 100dvh;
   }
   #game-overlay > div {
     position: relative;
@@ -409,21 +412,297 @@
     max-height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
   #game-overlay canvas {
     display: block;
     width: 100% !important;
     height: auto !important;
-    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     object-fit: contain;
   }
-  /* text-based games (memory, directorcut) scroll within overlay */
+  /* text-based games scroll within overlay */
   #game-overlay .arcade-game {
     overflow-y: auto;
-    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     -webkit-overflow-scrolling: touch;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+  /* memory grid: 3 cols on narrow screens */
+  @media (max-width: 400px) {
+    #game-overlay #memory-grid {
+      grid-template-columns: repeat(3, 1fr) !important;
+    }
   }
 
+  /* ═══════════════ HALL OF FAME ═══════════════ */
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap');
+
+  #tab-hall {
+    overflow-x: hidden;
+  }
+
+  .hall-palace {
+    background: linear-gradient(180deg, #0a0600 0%, #120d02 40%, #0e0900 100%);
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Marble floor perspective */
+  .hall-floor {
+    position: relative;
+    width: 100%;
+    height: 180px;
+    perspective: 600px;
+    perspective-origin: 50% 0%;
+    margin-bottom: -20px;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .hall-floor-inner {
+    position: absolute;
+    inset: 0;
+    transform: rotateX(55deg);
+    transform-origin: 50% 0%;
+    background:
+      repeating-linear-gradient(90deg, rgba(200,168,64,0.12) 0px, rgba(200,168,64,0.12) 1px, transparent 1px, transparent 80px),
+      repeating-linear-gradient(0deg, rgba(200,168,64,0.08) 0px, rgba(200,168,64,0.08) 1px, transparent 1px, transparent 80px),
+      linear-gradient(180deg, #1a1200 0%, #2a1e04 100%);
+  }
+
+  /* Entrance arch */
+  .hall-arch {
+    text-align: center;
+    padding: 32px 20px 20px;
+    position: relative;
+  }
+  .hall-arch::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: min(500px, 92vw);
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #c8a840, #f5e070, #c8a840, transparent);
+  }
+  .hall-arch-label {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    color: #8a6a20;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .hall-arch-title {
+    font-family: 'Cinzel Decorative', 'Cinzel', Georgia, serif;
+    font-size: clamp(22px, 6vw, 38px);
+    font-weight: 700;
+    color: #f5e070;
+    letter-spacing: 0.06em;
+    text-shadow: 0 0 40px rgba(200,168,64,0.6), 0 2px 4px rgba(0,0,0,0.8);
+    line-height: 1.1;
+    margin-bottom: 4px;
+  }
+  .hall-arch-sub {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: #6a5020;
+    letter-spacing: 0.2em;
+  }
+
+  /* Column dividers */
+  .hall-column-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    margin: 24px 0 16px;
+  }
+  .hall-column-divider::before,
+  .hall-column-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(200,168,64,0.4), transparent);
+  }
+  .hall-column-divider-label {
+    font-family: 'Cinzel', Georgia, serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: #c8a840;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Plaques — used for movie cards and player trophies */
+  .hall-section {
+    padding: 0 16px;
+    margin-bottom: 8px;
+  }
+
+  .hall-plaque-row {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+  .hall-plaque-row::-webkit-scrollbar { display: none; }
+
+  .hall-plaque {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    width: 130px;
+    background: linear-gradient(160deg, #1e1608 0%, #140e04 60%, #1a1206 100%);
+    border: 1px solid #3a2a08;
+    border-radius: 3px;
+    padding: 12px 10px;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6), inset 0 1px 0 rgba(200,168,64,0.15);
+  }
+  .hall-plaque::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(200,168,64,0.12);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .hall-plaque:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.7), 0 0 20px rgba(200,168,64,0.12), inset 0 1px 0 rgba(200,168,64,0.2);
+  }
+  .hall-plaque-rank {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    color: #8a6a20;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .hall-plaque-rank.gold { color: #f5d060; }
+  .hall-plaque-rank.silver { color: #c0c8d0; }
+  .hall-plaque-rank.bronze { color: #c8784a; }
+  .hall-plaque-poster {
+    width: 100%;
+    aspect-ratio: 2/3;
+    object-fit: cover;
+    border-radius: 2px;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+  }
+  .hall-plaque-title {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: #d4aa50;
+    line-height: 1.4;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+  }
+  .hall-plaque-stat {
+    font-size: 9px;
+    color: #6a5020;
+    letter-spacing: 0.05em;
+  }
+  .hall-plaque-stat span {
+    color: #c8a840;
+    font-weight: 600;
+  }
+
+  /* Trophy cards for players */
+  .hall-trophy-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+  }
+  .hall-trophy {
+    background: linear-gradient(160deg, #1e1608 0%, #140e04 100%);
+    border: 1px solid #3a2a08;
+    border-radius: 3px;
+    padding: 14px 12px;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(200,168,64,0.1);
+    text-align: center;
+  }
+  .hall-trophy::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(200,168,64,0.1);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .hall-trophy-icon { font-size: 28px; margin-bottom: 6px; }
+  .hall-trophy-player {
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+  .hall-trophy-label {
+    font-size: 9px;
+    color: #6a5020;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .hall-trophy-stat {
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #f5d060;
+    text-shadow: 0 0 16px rgba(200,168,64,0.5);
+  }
+  .hall-trophy-stat-label {
+    font-size: 8px;
+    color: #8a6a20;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Achievement badges */
+  .hall-achievement-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .hall-achievement {
+    background: linear-gradient(135deg, #1a1206 0%, #120d02 100%);
+    border: 1px solid #2a1e06;
+    border-radius: 3px;
+    padding: 10px 12px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    box-shadow: inset 0 1px 0 rgba(200,168,64,0.08);
+  }
+  .hall-achievement.unlocked { border-color: #3a2a08; }
+  .hall-achievement.locked { opacity: 0.4; filter: grayscale(0.7); }
+  .hall-achievement-icon { font-size: 22px; flex-shrink: 0; }
+  .hall-achievement-name {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: #c8a840;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+  .hall-achievement-desc { font-size: 9px; color: #6a5020; line-height: 1.4; }
+
+  /* Footer inscription */
+  .hall-inscription {
+    text-align: center;
+    padding: 32px 20px;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: #3a2a08;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
 
 </style>
 </head>
@@ -458,6 +737,7 @@
     <button class="tab" id="tab-btn-mymovies" onclick="showTab('mymovies',this)">My Movies</button>
     <button class="tab" id="tab-btn-friends" onclick="showTab('friends',this)">Friends</button>
     <button class="tab" id="tab-btn-arcade" onclick="showTab('arcade',this)">Arcade</button>
+    <button class="tab" id="tab-btn-hall" onclick="showTab('hall',this)">🏛️ Hall</button>
   </div>
   <div id="tab-vote"><div id="vote-inner"></div></div>
   <div id="tab-leaderboard" style="display:none">
@@ -496,6 +776,7 @@
   <div id="tab-mymovies" style="display:none"><div id="my-content"></div></div>
   <div id="tab-friends" style="display:none"><div id="friends-content"></div></div>
   <div id="tab-arcade" style="display:none"><div id="arcade-content"></div></div>
+  <div id="tab-hall" style="display:none"><div id="hall-content"></div></div>
 
 <!-- Fullscreen game overlay -->
 <div id="game-overlay" style="display:none"></div>
@@ -1903,10 +2184,10 @@ async function renderMyMovies(forcePlayer) {
     el.innerHTML = pillsHtml + _motdHtml + _motdHtml + '<div class="empty-msg">Select a player to see their movie activity.</div>';
     return;
   }
-  const picked =MOVIES.filter(m=>p.ratings[m.id].wins>0&&!p.ratings[m.id].unseen).sort((a,b)=>p.ratings[b.id].elo-p.ratings[a.id].elo);
-  const lostAll=MOVIES.filter(m=>p.ratings[m.id].matches>0&&p.ratings[m.id].wins===0&&!p.ratings[m.id].unseen).sort((a,b)=>p.ratings[b.id].elo-p.ratings[a.id].elo);
-  const unvoted=MOVIES.filter(m=>p.ratings[m.id].matches===0&&!p.ratings[m.id].unseen);
-  const unseen =MOVIES.filter(m=>p.ratings[m.id].unseen);
+  const picked =MOVIES.filter(m=>p.ratings[m.id].wins>0&&!p.ratings[m.id].unseen).sort((a,b)=>a.title.localeCompare(b.title));
+  const lostAll=MOVIES.filter(m=>p.ratings[m.id].matches>0&&p.ratings[m.id].wins===0&&!p.ratings[m.id].unseen).sort((a,b)=>a.title.localeCompare(b.title));
+  const unvoted=MOVIES.filter(m=>p.ratings[m.id].matches===0&&!p.ratings[m.id].unseen).sort((a,b)=>a.title.localeCompare(b.title));
+  const unseen =MOVIES.filter(m=>p.ratings[m.id].unseen).sort((a,b)=>a.title.localeCompare(b.title));
   if (!picked.length&&!lostAll.length&&!unvoted.length&&!unseen.length) { el.innerHTML='<div class="empty-msg">Start voting to see your activity here!</div>'; return; }
   const grid=(arr,fn)=>'<div class="my-grid">'+arr.map(fn).join('')+'</div>';
 
@@ -1972,11 +2253,13 @@ async function renderMyMovies(forcePlayer) {
   }
   const searchBar = `<div style="position:relative;margin-bottom:1rem">
     <input id="mymovies-search" type="text" placeholder="Search movies..." autocomplete="off"
-      style="width:100%;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:10px 14px 10px 36px;font-size:16px;color:#f0f0f0;outline:none;box-sizing:border-box"
-      oninput="filterMyMovies(this.value)"
+      style="width:100%;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:10px 36px 10px 36px;font-size:16px;color:#f0f0f0;outline:none;box-sizing:border-box"
+      oninput="filterMyMovies(this.value);document.getElementById('mymovies-clear').style.display=this.value?'flex':'none';"
       onfocus="this.style.borderColor='#6a5a20'"
       onblur="this.style.borderColor='#3a3010'"/>
     <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none">🔍</span>
+    <button id="mymovies-clear" onclick="document.getElementById('mymovies-search').value='';filterMyMovies('');document.getElementById('mymovies-suggestions').style.display='none';this.style.display='none';document.getElementById('mymovies-search').focus();"
+      style="display:none;position:absolute;right:4px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:#888;font-size:20px;cursor:pointer;line-height:1;padding:0;width:36px;height:36px;align-items:center;justify-content:center;border-radius:50%;">×</button>
     <div id="mymovies-suggestions" style="position:absolute;top:100%;left:0;right:0;background:#1a1a1e;border:1px solid #3a3010;border-top:none;border-radius:0 0 10px 10px;z-index:100;display:none;max-height:200px;overflow-y:auto"></div>
   </div>`;
   el.innerHTML = pillsHtml + searchBar + _motdHtml + html;
@@ -2005,6 +2288,16 @@ function filterMyMovies(query) {
     }
     label.style.display = hasVisible || !q ? '' : 'none';
   });
+
+  // Scroll search bar to top of view so results are immediately visible
+  if (q) {
+    const searchWrap = document.getElementById('mymovies-search')?.closest('div');
+    if (searchWrap) {
+      requestAnimationFrame(() => {
+        searchWrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }
 
   // Autocomplete suggestions
   if (!suggestEl) return;
@@ -2094,7 +2387,7 @@ function showTab(tabId,btn) {
   currentTab=tabId;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  const tabs = ['vote','leaderboard','mymovies','friends','arcade'];
+  const tabs = ['vote','leaderboard','mymovies','friends','arcade','hall'];
   tabs.forEach(t => {
     const el = document.getElementById('tab-'+t);
     if (!el) return;
@@ -2123,6 +2416,7 @@ function showTab(tabId,btn) {
     refreshPlayerFromDB().then(() => renderMyMovies());
   }
   if (tabId==='friends') renderFriends();
+  if (tabId==='hall') renderHallOfFame();
 }
 
 function onPlayerChange() {
@@ -2250,7 +2544,7 @@ async function renderArcade() {
     { id: 'catch', icon: '🎪', title: 'Poster Catch', desc: 'A prompt appears e.g. Catch: Horror movies. Posters fall from the top — move your basket left/right to catch matching ones (green border). Non-matching posters pass through. Miss a target = lose a life.' },
     { id: 'rottenorfresh', icon: '🍅', title: 'Rotten or Fresh', desc: 'Popcorn and tomatoes fly in from all sides. Move your basket with arrow keys, mouse, or touch to catch the popcorn and dodge the tomatoes. Getting hit by a tomato costs a life.' },
     { id: 'snake', icon: '🐍', title: 'Box Office Snake', desc: 'Classic snake but you must eat movie posters from lowest to highest worldwide box office gross. The next target is always shown at the top. Wrong order or hitting a wall = game over.' },
-    { id: "directorcut", icon: "🎬", title: "Directors Cut", desc: "A clapper board appears — wait for it to snap shut, then tap immediately. Tap too early = miss. 10 rounds, 100 points per hit. Nerves of steel required." },
+    { id: "scramble", icon: "🔤", title: "Scrambled Title", desc: "Unscramble the movie title before time runs out! 10 rounds, faster answers = more points." },
   ];
 
   let html = `<div class="section-label">Pick a game</div>
@@ -2278,12 +2572,12 @@ async function renderArcade() {
   // ── ARCADE LEADERBOARDS ──
   html += `<div class="section-label" style="margin-top:1.5rem">Arcade leaderboards</div>`;
 
-  const gameLabels = { runner: '🏃 Cinema Runner', memory: '🎭 Memory Match', catch: '🎪 Poster Catch', rottenorfresh: '🍅 Rotten or Fresh', snake: '🐍 Box Office Snake', directorcut: "🎬 Director's Cut" };
-  const maxPts = { runner: 500, memory: 1000, catch: 25, rottenorfresh: 30, snake: 500, directorcut: 1000 };
+  const gameLabels = { runner: '🏃 Cinema Runner', memory: '🎭 Memory Match', catch: '🎪 Poster Catch', rottenorfresh: '🍅 Rotten or Fresh', snake: '🐍 Box Office Snake', scramble: '🔤 Scrambled Title' };
+  const maxPts = { runner: 500, memory: 900, catch: 25, rottenorfresh: 30, snake: 500, scramble: 1000 };
 
   html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:stretch">`;
 
-  ['runner','memory','catch','rottenorfresh','snake','directorcut'].forEach(gameId => {
+  ['runner','memory','catch','rottenorfresh','snake','scramble'].forEach(gameId => {
     const gameScores = (scores[gameId] || []).sort((a,b) => b.score - a.score);
     const max = maxPts[gameId];
     html += `<div style="background:#111113;border:1px solid #3a3010;border-radius:12px;overflow:hidden;display:flex;flex-direction:column">
@@ -2342,7 +2636,16 @@ function toggleFloatChat() {
   if (chatOpen) {
     unreadCount = 0;
     badge.style.display = 'none';
-    loadFloatChat();
+    loadFloatChat().then(() => {
+      // Scroll to bottom after open — use two frames for mobile
+      requestAnimationFrame(() => {
+        const el = document.getElementById('float-chat-messages');
+        if (el) {
+          el.scrollTop = el.scrollHeight;
+          setTimeout(() => { el.scrollTop = el.scrollHeight; }, 80);
+        }
+      });
+    });
     const input = document.getElementById('float-chat-input');
     const player = getPlayer();
     if (input) {
@@ -2412,7 +2715,14 @@ async function loadFloatChat() {
       ? '<div style="text-align:center;color:#555;font-size:12px;padding:2rem">No messages yet. Say hi! 👋</div>'
       : sorted.map(renderChatMessage).join('');
     
-    if (wasAtBottom || !lastChatTimestamp) el.scrollTop = el.scrollHeight;
+    if (wasAtBottom || !lastChatTimestamp) {
+      // Defer scroll until after browser paints new content
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight;
+        // Double-check on mobile where layout can lag
+        setTimeout(() => { el.scrollTop = el.scrollHeight; }, 50);
+      });
+    }
   } catch(e) {}
 }
 
@@ -2462,7 +2772,7 @@ function startArcadeGame(gameId) {
   if (gameId === 'catch') startCatch();
   if (gameId === 'rottenorfresh') startRottenOrFresh();
   if (gameId === 'snake') startSnake();
-  if (gameId === 'directorcut') startDirectorCut();
+  if (gameId === 'scramble') startScramble();
 }
 
 function backToArcade() {
@@ -2472,7 +2782,6 @@ function backToArcade() {
   if (catchAnimFrame) cancelAnimationFrame(catchAnimFrame);
   if (rofAnimFrame) cancelAnimationFrame(rofAnimFrame);
   if (snakeAnimFrame) cancelAnimationFrame(snakeAnimFrame);
-  if (dcTimeout) clearTimeout(dcTimeout);
   runnerAnimFrame = null; catchAnimFrame = null; rofAnimFrame = null; snakeAnimFrame = null;
   window.rofActive = false; window.snakeActive = false;
   document.removeEventListener('keydown', rofKeyHandler);
@@ -2947,7 +3256,9 @@ function flipCard(idx) {
     if (s.cards[a].movieId === s.cards[b].movieId) {
       s.cards[a].matched = s.cards[b].matched = true;
       s.matches++;
-      s.score += 100 + s.timeLeft;
+      // 150 pts per match, minus 10 per extra move beyond minimum (6 pairs = 12 min moves)
+      const wastedMoves = Math.max(0, s.moves - (s.matches * 2));
+      s.score += Math.max(50, 150 - (wastedMoves * 10));
       s.flipped = [];
       renderMemory();
       if (s.matches === 6) { clearInterval(s.timer); setTimeout(() => endMemory(true), 400); }
@@ -2968,7 +3279,7 @@ function endMemory(won) {
     <div style="font-size:48px;margin-bottom:8px">${won ? '🎉' : '⏰'}</div>
     <div class="arcade-game-title">${won ? 'All matched!' : 'Time\'s up!'}</div>
     <div class="arcade-score-display">${memoryState.score}</div>
-    <div class="arcade-score-label">points · ${memoryState.moves} moves · ${memoryState.matches}/6 pairs found</div>
+    <div class="arcade-score-label">points · ${memoryState.moves} flips · ${memoryState.matches}/6 pairs · ${memoryState.timeLeft}s left</div>
     <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
       <button class="arcade-btn" onclick="startArcadeGame('memory')">Play again</button>
       <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
@@ -3384,10 +3695,10 @@ function rofLoop(timestamp) {
   }
 
   // Background - cinema screen glow
-  ctx.fillStyle = '#0a0808';
+  ctx.fillStyle = '#1a1410';
   ctx.fillRect(0, 0, W, H);
   const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, W/2);
-  grad.addColorStop(0, 'rgba(200,160,64,0.04)');
+  grad.addColorStop(0, 'rgba(200,160,64,0.12)');
   grad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, H);
@@ -3685,119 +3996,800 @@ function snakeLoop() {
 // GAME 6: DIRECTOR'S CUT
 // Clapper boards fall, tap at exact moment they snap shut
 // ═══════════════════════════════════════════════════════
-function startDirectorCut() {
-  openGameOverlay('');
-  const el = document.getElementById('game-overlay');
-  el.style.overflowY = 'auto';
-  el.innerHTML = `<div class="arcade-game" style="width:100%;box-sizing:border-box">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-      <button class="arcade-btn-secondary" onclick="backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
-      <span style="font-size:13px;color:#777">Tap when the clapper snaps shut!</span>
-    </div>
-    <div id="dc-game" style="text-align:center"></div>
-  </div>`;
-  dcState = { score: 0, round: 0, total: 10, active: false };
-  dcTimeout = null;
-  dcNextRound();
-}
 
-let dcState = {};
-let dcTimeout = null;
+function startScramble() {
+  const rounds = 10;
+  const TIME_PER_ROUND = 20;
+  const picks = [...MOVIES].sort(() => Math.random() - 0.5).slice(0, rounds);
 
-function dcNextRound() {
-  const el = document.getElementById('dc-game');
-  if (!el) return;
-  const s = dcState;
+  let scrambleState = {
+    rounds: picks,
+    current: 0,
+    score: 0,
+    timeLeft: TIME_PER_ROUND,
+    timer: null,
+    answered: false
+  };
 
-  if (s.round >= s.total) {
-    saveArcadeScore('directorcut', s.score);
-    el.innerHTML = `<div style="padding:2rem 0">
-      <div style="font-size:48px;margin-bottom:8px">🎬</div>
-      <div class="arcade-game-title">That's a Wrap!</div>
-      <div class="arcade-score-display">${s.score}</div>
-      <div class="arcade-score-label">points out of ${s.total * 100}</div>
-      <div style="margin-top:1rem;color:#777;font-size:13px">${s.score >= s.total*85 ? '🌟 Perfect takes!' : s.score >= s.total*60 ? '👍 Good director!' : '🎭 Keep practicing!'}</div>
-      <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
-        <button class="arcade-btn" onclick="startArcadeGame('directorcut')">Play again</button>
-        <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+  function scrambleWord(word) {
+    if (word.length <= 2) return word;
+    const arr = word.split('');
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    if (arr.join('') === word && arr.length > 1) [arr[0], arr[1]] = [arr[1], arr[0]];
+    return arr.join('');
+  }
+
+  function scrambleTitle(title) {
+    return title.split(' ').map(w => {
+      const letters = w.replace(/[^a-zA-Z0-9]/g, '');
+      const scrambled = scrambleWord(letters);
+      return w.replace(/[a-zA-Z0-9]+/, scrambled);
+    }).join(' ');
+  }
+
+  function getScrambled(title) {
+    for (let i = 0; i < 8; i++) {
+      const s = scrambleTitle(title);
+      if (s.toLowerCase() !== title.toLowerCase()) return s;
+    }
+    return title.split(' ').map(w => w.split('').reverse().join('')).join(' ');
+  }
+
+  function normalize(str) {
+    return str.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  function isClose(input, target) {
+    const a = normalize(input), b = normalize(target);
+    if (a === b) return true;
+    // Allow 1 typo per 6 chars
+    if (Math.abs(a.length - b.length) > 2) return false;
+    let mismatches = 0;
+    const longer = a.length > b.length ? a : b;
+    const shorter = a.length > b.length ? b : a;
+    for (let i = 0; i < longer.length; i++) {
+      if (longer[i] !== shorter[i]) mismatches++;
+      if (mismatches > Math.floor(b.length / 6) + 1) return false;
+    }
+    return true;
+  }
+
+  function renderRound() {
+    const ov = document.getElementById('game-overlay');
+    if (!ov) return;
+    const s = scrambleState;
+    if (s.current >= s.rounds.length) {
+      clearInterval(s.timer);
+      saveArcadeScore('scramble', s.score);
+      ov.innerHTML = `<div class="arcade-game" style="text-align:center;width:100%;box-sizing:border-box">
+        <div style="font-size:48px;margin-bottom:8px">🔤</div>
+        <div class="arcade-game-title">That's a Wrap!</div>
+        <div class="arcade-score-display">${s.score}</div>
+        <div class="arcade-score-label">points out of ${rounds * 100}</div>
+        <div style="margin-top:1rem;color:#777;font-size:13px">${s.score >= rounds*80 ? '🌟 Film genius!' : s.score >= rounds*50 ? '🎬 Good memory!' : '🎟️ Keep watching!'}</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:1.5rem">
+          <button class="arcade-btn" onclick="startArcadeGame('scramble')">Play again</button>
+          <button class="arcade-btn-secondary" onclick="backToArcade()">Back</button>
+        </div>
+      </div>`;
+      return;
+    }
+
+    const movie = s.rounds[s.current];
+    const scrambled = getScrambled(movie.title);
+    const timeColor = s.timeLeft <= 5 ? '#f87171' : s.timeLeft <= 10 ? '#fbbf24' : '#c8a040';
+
+    ov.innerHTML = `<div class="arcade-game" style="width:100%;box-sizing:border-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+        <button class="arcade-btn-secondary" onclick="clearInterval(scrambleState.timer);backToArcade()" style="padding:6px 14px;font-size:12px">← Back</button>
+        <span style="font-size:13px;color:#777">Round ${s.current + 1} / ${rounds}</span>
+        <span style="font-size:18px;font-weight:800;color:${timeColor}" id="scramble-timer">${s.timeLeft}s</span>
+      </div>
+      <div style="text-align:center;margin-bottom:1.5rem">
+        <div style="font-size:11px;color:#777;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px">Unscramble the movie title</div>
+        <div style="font-size:28px;font-weight:800;color:#f5e6c0;letter-spacing:0.06em;line-height:1.3;font-family:'Special Elite',monospace;background:#1a1a1e;border:1px solid #3a3010;border-radius:10px;padding:16px 20px;word-break:break-word">${scrambled}</div>
+      </div>
+      <div style="margin-bottom:1rem">
+        <input id="scramble-input" type="text" inputmode="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          placeholder="Type the movie title..."
+          style="width:100%;background:#1a1a1e;border:2px solid #3a3010;border-radius:10px;padding:12px 14px;font-size:16px;color:#f0f0f0;outline:none;box-sizing:border-box;text-align:center;"
+          oninput="scrambleCheckInput(this.value)"
+          onkeydown="if(event.key==='Enter')scrambleSubmit()"/>
+        <button class="arcade-btn" onclick="scrambleSubmit()" style="width:100%;margin-top:8px;min-height:48px;font-size:16px">Submit</button>
+      </div>
+      <div id="scramble-feedback" style="text-align:center;min-height:44px"></div>
+      <div style="text-align:center;margin-top:0.5rem">
+        <div class="arcade-score-display" style="font-size:22px">${s.score}</div>
+        <div style="font-size:11px;color:#777">points</div>
       </div>
     </div>`;
-    return;
+
+    // Focus input after render
+    requestAnimationFrame(() => {
+      const inp = document.getElementById('scramble-input');
+      if (inp) inp.focus();
+    });
+
+    // Start timer
+    clearInterval(s.timer);
+    s.timeLeft = TIME_PER_ROUND;
+    s.answered = false;
+    s.timer = setInterval(() => {
+      s.timeLeft--;
+      const timerEl = document.getElementById('scramble-timer');
+      if (timerEl) {
+        const tc = s.timeLeft <= 5 ? '#f87171' : s.timeLeft <= 10 ? '#fbbf24' : '#c8a040';
+        timerEl.textContent = s.timeLeft + 's';
+        timerEl.style.color = tc;
+      }
+      if (s.timeLeft <= 0) {
+        clearInterval(s.timer);
+        if (!s.answered) scrambleAnswer(false, movie.title);
+      }
+    }, 1000);
   }
 
-  s.round++;
-  s.active = false;
-  if (dcTimeout) clearTimeout(dcTimeout);
+  function scrambleCheckInput(val) {
+    // Live feedback: highlight input green when close enough
+    const s = scrambleState;
+    if (s.answered) return;
+    const movie = s.rounds[s.current];
+    const inp = document.getElementById('scramble-input');
+    if (!inp) return;
+    if (isClose(val, movie.title)) {
+      inp.style.borderColor = '#4ade80';
+    } else {
+      inp.style.borderColor = '#3a3010';
+    }
+  }
 
-  const movie = MOVIES[Math.floor(Math.random() * MOVIES.length)];
-  const snapDelay = 1200 + Math.random() * 2200;
+  function scrambleSubmit() {
+    const s = scrambleState;
+    if (s.answered) return;
+    const inp = document.getElementById('scramble-input');
+    if (!inp) return;
+    const movie = s.rounds[s.current];
+    const correct = isClose(inp.value, movie.title);
+    scrambleAnswer(correct, movie.title);
+  }
 
-  // Show open clapper - waiting state
-  el.innerHTML = `<div style="padding:1rem 0">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding:0 1rem">
-      <span style="font-size:11px;color:#666;text-transform:uppercase;letter-spacing:0.08em">Take ${s.round} / ${s.total}</span>
-      <span style="font-size:15px;font-weight:700;color:#c8a040">${s.score} pts</span>
-    </div>
-    <div style="font-size:13px;color:#c8a040;margin-bottom:1.5rem">Scene: "${movie.title}"</div>
-    <div id="dc-visual" style="margin:0 auto 1rem;width:160px;height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1a1a1e;border:2px solid #3a3010;border-radius:16px;cursor:pointer;transition:all 0.15s" onclick="dcTap()">
-      <div id="dc-top" style="font-size:52px;transition:transform 0.08s;transform-origin:bottom center;transform:rotate(-35deg)">🎬</div>
-      <div id="dc-bottom" style="font-size:28px;margin-top:-8px">📋</div>
-    </div>
-    <div id="dc-status" style="font-size:16px;color:#555;min-height:28px;font-weight:600">Get ready...</div>
-    <div style="font-size:12px;color:#444;margin-top:6px">Tap the clapper when it snaps!</div>
-    <div style="display:flex;justify-content:center;gap:6px;margin-top:1.25rem">
-      ${Array.from({length: s.total}, (_,i) => `<div style="width:8px;height:8px;border-radius:50%;background:${i < s.round-1 ? '#c8a040' : '#2a2a2e'}"></div>`).join('')}
-    </div>
-  </div>`;
+  function scrambleAnswer(correct, correctTitle) {
+    const s = scrambleState;
+    if (s.answered) return;
+    s.answered = true;
+    clearInterval(s.timer);
 
-  // Snap after delay
-  dcTimeout = setTimeout(() => {
-    const top = document.getElementById('dc-top');
-    const status = document.getElementById('dc-status');
-    const visual = document.getElementById('dc-visual');
-    if (!top || !status) return;
+    const pts = correct ? Math.round(50 + (s.timeLeft / TIME_PER_ROUND) * 50) : 0;
+    if (correct) s.score += pts;
 
-    // Animate snap shut
-    top.style.transform = 'rotate(0deg)';
-    top.style.fontSize = '52px';
-    if (visual) { visual.style.borderColor = '#c8a040'; visual.style.background = '#1a1810'; }
-    status.textContent = 'TAP NOW!';
-    status.style.color = '#f5f0e8';
-    status.style.fontSize = '22px';
-    s.active = true;
+    const inp = document.getElementById('scramble-input');
+    if (inp) { inp.disabled = true; inp.style.borderColor = correct ? '#4ade80' : '#f87171'; }
 
-    // Miss window - 900ms to tap
-    dcTimeout = setTimeout(() => {
-      if (!s.active) return;
-      s.active = false;
-      const st = document.getElementById('dc-status');
-      const vis = document.getElementById('dc-visual');
-      if (st) { st.textContent = '⏰ Too slow! +0 pts'; st.style.color = '#f87171'; st.style.fontSize = '16px'; }
-      if (vis) { vis.style.borderColor = '#f87171'; }
-      dcTimeout = setTimeout(dcNextRound, 1000);
-    }, 900);
-  }, snapDelay);
+    const fb = document.getElementById('scramble-feedback');
+    if (fb) {
+      fb.innerHTML = correct
+        ? `<div style="color:#4ade80;font-weight:700;font-size:15px">✓ Correct! +${pts} points</div>`
+        : `<div style="color:#f87171;font-weight:700;font-size:15px">✗ It was: <span style="color:#f5e6c0">${correctTitle}</span></div>`;
+    }
+
+    s.current++;
+    setTimeout(renderRound, 1600);
+  }
+
+  // Expose for event handlers
+  window.scrambleState = scrambleState;
+  window.scrambleCheckInput = scrambleCheckInput;
+  window.scrambleSubmit = scrambleSubmit;
+  openGameOverlay('');
+  renderRound();
 }
 
-function dcTap() {
-  const s = dcState;
-  const status = document.getElementById('dc-status');
-  const visual = document.getElementById('dc-visual');
 
-  if (!s.active) {
-    // Too early
-    if (status) { status.textContent = '⚡ Too early!'; status.style.color = '#f87171'; status.style.fontSize = '16px'; }
-    if (visual) { visual.style.borderColor = '#f87171'; setTimeout(() => { if (visual) visual.style.borderColor = '#3a3010'; }, 400); }
-    return;
+// ═══════════════════════════════════════════════════════
+// HALL OF FAME
+// ═══════════════════════════════════════════════════════
+
+async function renderHallOfFame() {
+  const el = document.getElementById('hall-content');
+  el.innerHTML = '<div style="text-align:center;padding:3rem;color:#8a6a20;font-family:Cinzel,serif;letter-spacing:0.2em;font-size:12px">ENTERING THE HALL...</div>';
+
+  const player = getPlayer();
+  // Include all movies with any data, ranked by ELO
+  const globalRanked = [...MOVIES]
+    .filter(m => state.globalRatings[m.id])
+    .sort((a,b) => state.globalRatings[b.id].elo - state.globalRatings[a.id].elo);
+  // Fallback: if no global data, use all movies in order
+  const rankedMovies = globalRanked.length > 0 ? globalRanked : MOVIES.slice();
+
+  let arcadeScores = {};
+  try {
+    const rows = await sbFetch('/rest/v1/arcade_scores?select=player,game,score&order=score.desc&limit=200');
+    if (rows) rows.forEach(r => {
+      if (!arcadeScores[r.game]) arcadeScores[r.game] = [];
+      arcadeScores[r.game].push(r);
+    });
+  } catch(e) {}
+
+  const collectKey = 'cinerank_collected_' + (player||'guest');
+  let collected = new Set(JSON.parse(localStorage.getItem(collectKey)||'[]'));
+
+  el.innerHTML = `
+    <div style="position:relative;width:100%;background:#1a1200;border-radius:12px;overflow:hidden;user-select:none">
+      <canvas id="museum-canvas" style="display:block;width:100%;touch-action:none;cursor:grab"></canvas>
+      <div style="position:absolute;inset:0;pointer-events:none">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)">
+          <div style="width:2px;height:16px;background:rgba(200,168,64,0.8);position:absolute;left:7px;top:0"></div>
+          <div style="width:16px;height:2px;background:rgba(200,168,64,0.8);position:absolute;top:7px;left:0"></div>
+        </div>
+        <div id="museum-label" style="position:absolute;bottom:72px;left:50%;transform:translateX(-50%);background:rgba(242,234,212,0.97);border:1px solid rgba(175,135,38,0.7);border-radius:3px;padding:10px 20px;font-family:Cinzel,serif;font-size:12px;color:#2a1800;text-align:center;display:none;max-width:360px;line-height:1.7;pointer-events:all;cursor:pointer"></div>
+        <div id="museum-room" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);font-family:Cinzel,serif;font-size:11px;color:rgba(200,168,64,0.9);letter-spacing:0.25em;white-space:nowrap"></div>
+        <div id="museum-collect-toast" style="position:absolute;top:50px;left:50%;transform:translateX(-50%);background:rgba(200,168,64,0.95);color:#0a0600;font-family:Cinzel,serif;font-size:11px;font-weight:700;padding:8px 20px;border-radius:3px;display:none;white-space:nowrap"></div>
+        <div id="museum-collection" style="position:absolute;top:12px;right:14px;font-family:Cinzel,serif;font-size:10px;color:rgba(200,168,64,0.7)"></div>
+        <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(200,168,64,0.4);letter-spacing:0.1em;font-family:Cinzel,serif;white-space:nowrap">ARROWS/DRAG · WASD · CLICK POSTER TO COLLECT</div>
+      </div>
+      <div id="mjoy-wrap" style="position:absolute;bottom:44px;left:20px;z-index:10">
+        <div id="mjoy-pad" style="width:72px;height:72px;border-radius:50%;background:rgba(200,168,64,0.1);border:1.5px solid rgba(200,168,64,0.25);position:relative;touch-action:none">
+          <div id="mjoy-knob" style="width:28px;height:28px;border-radius:50%;background:rgba(200,168,64,0.3);border:1px solid rgba(200,168,64,0.5);position:absolute;top:22px;left:22px"></div>
+        </div>
+      </div>
+    </div>`;
+
+  const canvas = document.getElementById('museum-canvas');
+  const W = Math.min(680, window.innerWidth - 24);
+  const H = Math.round(W * 0.58);
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const HW=3.5, HL=80, HH=4.2, EYE=1.7;
+  const LW0=6, LW1=22, LW2=40, LW3=56;
+  const DOOR_W=1.3;
+  const FOV=Math.PI/2.0, HALF_FOV=FOV/2;
+
+  let cam={x:0,z:-8,yaw:0,pitch:0.04};
+  let keys={}, running=true, nearestPainting=null;
+
+  // ── Raycaster: no directional guards, renders in ALL directions ──
+  function drawScene(){
+    const cy=Math.cos(cam.yaw), sy=Math.sin(cam.yaw);
+    const horizonY=H*0.5+cam.pitch*H*0.6;
+
+    // Ceiling
+    const cg=ctx.createLinearGradient(0,0,0,horizonY);
+    cg.addColorStop(0,'#e8dfc8');cg.addColorStop(0.5,'#d4c898');cg.addColorStop(1,'#c0aa70');
+    ctx.fillStyle=cg;ctx.fillRect(0,0,W,horizonY+1);
+    const dg=ctx.createRadialGradient(W/2,horizonY*0.25,0,W/2,horizonY*0.25,W*0.38);
+    dg.addColorStop(0,'rgba(155,198,235,0.5)');dg.addColorStop(0.45,'rgba(195,210,188,0.2)');dg.addColorStop(1,'transparent');
+    ctx.fillStyle=dg;ctx.fillRect(0,0,W,horizonY+1);
+    const bH=3;
+    // ceiling border removed
+
+    // Floor
+    const fg=ctx.createLinearGradient(0,horizonY,0,H);
+    fg.addColorStop(0,'#c0a870');fg.addColorStop(0.45,'#907040');fg.addColorStop(1,'#402810');
+    ctx.fillStyle=fg;ctx.fillRect(0,horizonY,W,H-horizonY);
+    ctx.strokeStyle='rgba(70,48,16,0.16)';ctx.lineWidth=1;
+    for(let x=-4;x<=4;x++){ctx.beginPath();ctx.moveTo(W/2+x*W/3.5,H);ctx.lineTo(W/2,horizonY);ctx.stroke();}
+    for(let t=0.12;t<1;t+=0.18){const y=horizonY+t*(H-horizonY);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+    // Ray cast — no directional pre-checks, just compute t and validate
+    for(let col=0;col<W;col++){
+      const rayAngle=cam.yaw-HALF_FOV+(col/W)*FOV;
+      const rdx=Math.sin(rayAngle), rdz=Math.cos(rayAngle);
+      let hitDist=78, hitWallX=0, wallSide=0;
+
+      // Helper: check a wall and update hit
+      function testWall(t, hz_or_hx, isXwall, minV, maxV, wx){
+        if(t<0.05)return;
+        if(hz_or_hx<minV||hz_or_hx>maxV)return;
+        const cd=t*Math.cos(rayAngle-cam.yaw);
+        if(cd<hitDist){hitDist=cd;hitWallX=(isXwall?hz_or_hx:hz_or_hx)%1;wallSide=wx;}
+      }
+
+      // Main corridor left wall x=-HW (check both sides — no rdx guard)
+      if(Math.abs(rdx)>0.0001){
+        const tL=(-HW-cam.x)/rdx; const tR=(HW-cam.x)/rdx;
+        if(tL>0.05){const hz=cam.z+tL*rdz;if(hz>-21&&hz<HL){const cd=tL*Math.cos(rayAngle-cam.yaw);if(cd<hitDist){hitDist=cd;hitWallX=((hz%1)+1)%1;wallSide=0;}}}
+        if(tR>0.05){const hz=cam.z+tR*rdz;if(hz>-21&&hz<HL){const cd=tR*Math.cos(rayAngle-cam.yaw);if(cd<hitDist){hitDist=cd;hitWallX=((hz%1)+1)%1;wallSide=0;}}}
+      }
+      // End wall z=HL and back wall z=-1 (both directions)
+      if(Math.abs(rdz)>0.0001){
+        const tEnd=(HL-cam.z)/rdz; const tBack=(-20-cam.z)/rdz;
+        if(tEnd>0.05){const hx=cam.x+tEnd*rdx;if(hx>=-HW&&hx<=HW){const cd=tEnd*Math.cos(rayAngle-cam.yaw);if(cd<hitDist){hitDist=cd;hitWallX=((hx/HW*0.5+0.5)%1+1)%1;wallSide=2;}}}
+        if(tBack>0.05){const hx=cam.x+tBack*rdx;if(hx>=-HW&&hx<=HW){const cd=tBack*Math.cos(rayAngle-cam.yaw);if(cd<hitDist){hitDist=cd;hitWallX=0.5;wallSide=2;}}}
+      }
+      // Wing walls (both pairs, both sides)
+      if(Math.abs(rdx)>0.0001){
+        for(const[wz0,wz1]of[[LW0,LW1],[LW2,LW3]]){
+          const tWL=(-HW-5-cam.x)/rdx; const tWR=(HW+5-cam.x)/rdx;
+          if(tWL>0.05){const hz=cam.z+tWL*rdz;if(hz>=wz0&&hz<=wz1){const cd=tWL*Math.cos(rayAngle-cam.yaw);if(cd<hitDist){hitDist=cd;hitWallX=((hz%1)+1)%1;wallSide=1;}}}
+          if(tWR>0.05){const hz=cam.z+tWR*rdz;if(hz>=wz0&&hz<=wz1){const cd=tWR*Math.cos(rayAngle-cam.yaw);if(cd<hitDist){hitDist=cd;hitWallX=((hz%1)+1)%1;wallSide=1;}}}
+        }
+      }
+      // Wing entrance walls (front and back of each wing opening) — both directions
+      if(Math.abs(rdz)>0.0001){
+        for(const[wz0,wz1]of[[LW0,LW1],[LW2,LW3]]){
+          for(const wz of[wz0,wz1]){
+            const t=(wz-cam.z)/rdz;
+            if(t>0.05){
+              const hx=cam.x+t*rdx;
+              // Only the wing portion: x outside main corridor
+              if((hx<-HW&&hx>=-HW-5)||(hx>HW&&hx<=HW+5)){
+                const cd=t*Math.cos(rayAngle-cam.yaw);
+                if(cd<hitDist){hitDist=cd;hitWallX=((hx%1)+1)%1;wallSide=1;}
+              }
+            }
+          }
+        }
+      }
+      // Transverse walls with door — BOTH directions (from in front AND behind)
+      if(Math.abs(rdz)>0.0001){
+        for(const wz of[0,30,60,75]){
+          const t=(wz-cam.z)/rdz;
+          if(t>0.05){
+            const hx=cam.x+t*rdx;
+            if(hx>=-HW&&hx<=HW&&Math.abs(hx)>=DOOR_W){
+              const cd=t*Math.cos(rayAngle-cam.yaw);
+              if(cd<hitDist){hitDist=cd;hitWallX=((hx/HW*0.5+0.5)%1+1)%1;wallSide=2;}
+            }
+          }
+        }
+      }
+
+      if(hitDist>=77)continue;
+
+      const stripH=Math.min(H*4,(HH/hitDist)*(H/(2*Math.tan(HALF_FOV/2))));
+      const pitchOff=cam.pitch*H*0.6;
+      const wallTop=Math.max(0,(H/2-stripH/2)+pitchOff);
+      const wallBot=Math.min(H,(H/2+stripH/2)+pitchOff);
+      const b=Math.max(0.28,Math.min(1,1.02-hitDist*0.014));
+      const marble=0.93+Math.sin(((hitWallX+1)%1)*26.3)*0.04+Math.cos(((hitWallX+1)%1)*9.7)*0.03;
+      const bv=b*marble;
+      let r,g,bl;
+      if(wallSide===2){r=238*bv;g=222*bv;bl=192*bv;}
+      else if(wallSide===1){r=216*bv;g=200*bv;bl=168*bv;}
+      else{r=230*bv;g=214*bv;bl=184*bv;}
+      ctx.fillStyle=`rgb(${Math.round(r)},${Math.round(g)},${Math.round(bl)})`;
+      ctx.fillRect(col,wallTop,1,wallBot-wallTop);
+    }
+
+    // Chandeliers
+    for(let cz=4;cz<=HL;cz+=6){
+      if(Math.abs(cz-cam.z)>22)continue;
+      const dx=0-cam.x,dz2=cz-cam.z;
+      const rx=dx*cy-dz2*sy,rz=dx*sy+dz2*cy,ry=HH-0.2-EYE;
+      if(rz<=0.1)continue;
+      const cp2=Math.cos(cam.pitch),sp2=Math.sin(cam.pitch);
+      const pz=rz*cp2-ry*sp2,py=rz*sp2+ry*cp2;
+      if(pz<=0.1)continue;
+      const scx=W/2+(rx/pz)*W/(2*Math.tan(HALF_FOV));
+      const scy=H/2-(py/pz)*W/(2*Math.tan(HALF_FOV))*(H/W)+cam.pitch*H*0.6;
+      if(scx<-50||scx>W+50)continue;
+      const sz=Math.max(3,Math.min(52,80/pz));
+      const gl=ctx.createRadialGradient(scx,scy,0,scx,scy,sz*3);
+      gl.addColorStop(0,'rgba(255,248,205,0.76)');gl.addColorStop(0.28,'rgba(255,218,130,0.28)');gl.addColorStop(1,'transparent');
+      ctx.fillStyle=gl;ctx.fillRect(scx-sz*3,scy-sz*3,sz*6,sz*6);
+      ctx.fillStyle=`rgba(255,248,210,${Math.max(0.16,0.76-pz*0.028)})`;
+      ctx.beginPath();ctx.ellipse(scx,scy,sz*0.44,sz*0.22,0,0,Math.PI*2);ctx.fill();
+    }
   }
 
-  s.active = false;
-  if (dcTimeout) clearTimeout(dcTimeout);
-  s.score += 100;
+  // ── Paintings: all side-wall mounted, floor-to-ceiling ──
+  const paintings=[];
 
-  if (visual) { visual.style.borderColor = '#4ade80'; visual.style.background = '#0a2010'; }
-  if (status) { status.textContent = '🎬 Cut! +100 pts'; status.style.color = '#4ade80'; status.style.fontSize = '16px'; }
-  dcTimeout = setTimeout(dcNextRound, 800);
+  // Helper: left wall = side -1 (px=-HW, nx=+1), right wall = side +1 (px=+HW, nx=-1)
+  function sideP(id,side,pz,pw,ph,img,emoji,title,sub,rank,pc,type){
+    const px=side<0?-HW:HW, nx=side<0?1:-1;
+    const imgEl=img?Object.assign(new Image(),{src:img}):null;
+    paintings.push({id,px,pz,nx,nz:0,pw,ph,imgEl,emoji,title,sub,rankNum:rank,playerColor:pc,type});
+  }
+  // Wing helper (left outer wall x=-HW-5 faces right nx=+1, right outer x=HW+5 faces left nx=-1)
+  function wingP(id,side,pz,pw,ph,img,emoji,title,sub,rank,pc,type){
+    const px=side<0?-HW-2.5:HW+2.5, nx=side<0?1:-1;
+    const imgEl=img?Object.assign(new Image(),{src:img}):null;
+    paintings.push({id,px,pz,nx,nz:0,pw,ph,imgEl,emoji,title,sub,rankNum:rank,playerColor:pc,type});
+  }
+
+  const PH=HH*0.92;
+  const PW=1.7;
+  const SPACING=3.8;
+
+  // ── GODS OF OLYMPUS (z -18 to -2): one giant player card per person ──
+  PLAYERS.forEach((p,i)=>{
+    const r=state.players[p].ratings;
+    const tm=Math.round(MOVIES.reduce((s,m)=>s+r[m.id].matches,0)/2);
+    const tw=MOVIES.reduce((s,m)=>s+r[m.id].wins,0);
+    const wr=tm>0?Math.round(tw/(tm*2)*100):0;
+    const topM=[...MOVIES].filter(m=>r[m.id].matches>0).sort((a,b)=>r[b.id].elo-r[a.id].elo)[0];
+    const streak=MOVIES.filter(m=>r[m.id].wins>0).length;
+    const side=i%2===0?-1:1;
+    sideP('god_'+p,side,-17+i*3.5,PW*1.1,PH*1.02,
+      topM?topM.img:null,
+      i===0?'👑':i===1?'⚔️':i===2?'🏆':i===3?'🎯':'⚡',
+      p,
+      `${tm} matchups · ${wr}% win rate · ${streak} films won`,
+      null,PLAYER_COLORS[p]||'#c8a840','player');
+  });
+
+  // Gallery of Champions (z 6–30): top 20, alternating L/R
+  rankedMovies.slice(0,16).forEach((m,i)=>{
+    const gr=state.globalRatings[m.id]||{elo:1000,wins:0,matches:0};
+    sideP('mv_'+m.id,i%2===0?-1:1, 14+i*SPACING, PW,PH, m.img,null,m.title,
+      `ELO ${gr.elo} · Rank #${i+1} · ${gr.wins}W`,i+1,null,'movie');
+  });
+
+  // Arcade Records (left wing, z 7–21)
+  [{id:'runner',e:'🏃',n:'Cinema Runner'},{id:'memory',e:'🎭',n:'Memory Match'},
+   {id:'catch',e:'🎪',n:'Poster Catch'},{id:'rottenorfresh',e:'🍅',n:'Rotten or Fresh'},
+   {id:'snake',e:'🐍',n:'Box Office Snake'},{id:'scramble',e:'🔤',n:'Scrambled Title'}
+  ].forEach((g,i)=>{
+    const sc=(arcadeScores[g.id]||[]).sort((a,b)=>b.score-a.score);
+    const top=sc[0],s2=sc.slice(1,3).map(x=>`${x.player} ${x.score}`).join(' · ');
+    wingP('arc_'+g.id,-1,7.5+i*2.5,PW,PH,null,g.e,g.n,
+      top?`🥇 ${top.player}: ${top.score}${s2?' · '+s2:''}`:'No records yet',null,null,'arcade');
+  });
+
+  // Players Hall (right wing, z 7–22)
+  PLAYERS.forEach((p,i)=>{
+    const r=state.players[p].ratings;
+    const tm=Math.round(MOVIES.reduce((s,m)=>s+r[m.id].matches,0)/2);
+    const tw=MOVIES.reduce((s,m)=>s+r[m.id].wins,0);
+    const wr=tm>0?Math.round(tw/(tm*2)*100):0;
+    const topM=[...MOVIES].filter(m=>r[m.id].matches>0).sort((a,b)=>r[b.id].elo-r[a.id].elo)[0];
+    wingP('pl_'+p,1,7.5+i*3.2,PW,PH,topM?topM.img:null,'🏆',p,
+      `${tm} matchups · ${wr}% win rate · Top: ${topM?topM.title.slice(0,16):'—'}`,null,PLAYER_COLORS[p]||'#c8a840','player');
+  });
+
+  // Inner Sanctum (z 31–58): most divisive
+  [...MOVIES].filter(m=>PLAYERS.some(p=>state.players[p]?.ratings?.[m.id]?.matches>0)).map(m=>{
+    const elos=PLAYERS.map(p=>(state.players[p]?.ratings?.[m.id]?.elo)||1000);
+    return{m,sp:Math.max(...elos)-Math.min(...elos)};
+  }).filter(x=>x.sp>10).sort((a,b)=>b.sp-a.sp).slice(0,10).forEach(({m,sp},i)=>{
+    sideP('con_'+m.id,i%2===0?-1:1,32+i*SPACING,PW,PH,m.img,null,m.title,
+      `Most divisive · ${sp} ELO spread across players`,null,null,'movie');
+  });
+
+  // Wing of Controversy (left wing 2, z 41–55): per-player hot takes
+  PLAYERS.forEach((p,i)=>{
+    const r=state.players[p].ratings;
+    const groupAvg=m=>PLAYERS.reduce((s,pl)=>s+state.players[pl].ratings[m.id].elo,0)/PLAYERS.length;
+    const contrarian=[...MOVIES].filter(m=>r[m.id].matches>0)
+      .sort((a,b)=>(r[b.id].elo-groupAvg(b))-(r[a.id].elo-groupAvg(a)))[0];
+    if(contrarian){
+      const diff=Math.round(r[contrarian.id].elo-groupAvg(contrarian));
+      wingP('ctv_'+p,-1,41.5+i*3.2,PW,PH,contrarian.img,null,`${p}'s Hot Take`,
+        `"${contrarian.title.slice(0,22)}" · +${diff} vs group`,null,PLAYER_COLORS[p],'player');
+    }
+  });
+
+  // Hall of Champions (right wing 2, z 41–55): per-player best movie
+  PLAYERS.forEach((p,i)=>{
+    const r=state.players[p].ratings;
+    const champion=[...MOVIES].filter(m=>r[m.id].wins>0).sort((a,b)=>r[b.id].wins-r[a.id].wins)[0];
+    if(champion){
+      wingP('champ_'+p,1,41.5+i*3.2,PW,PH,champion.img,null,`${p}'s Champion`,
+        `"${champion.title.slice(0,20)}" · ${r[champion.id].wins} wins`,null,PLAYER_COLORS[p],'player');
+    }
+  });
+
+  // Vault of Legends (z 61–79): left=most wins, right=highest win rate
+  [...MOVIES].filter(m=>state.globalRatings[m.id]&&state.globalRatings[m.id].wins>0)
+    .sort((a,b)=>state.globalRatings[b.id].wins-state.globalRatings[a.id].wins)
+    .slice(0,8).forEach((m,i)=>{
+      sideP('vlt_'+m.id,-1,62+i*SPACING,PW,PH,m.img,null,m.title,
+        `${state.globalRatings[m.id].wins} all-time wins · ${state.globalRatings[m.id].matches} matchups`,i<3?i+1:null,null,'movie');
+    });
+  [...MOVIES].filter(m=>state.globalRatings[m.id]&&state.globalRatings[m.id].matches>=5)
+    .map(m=>({m,wr:state.globalRatings[m.id].wins/state.globalRatings[m.id].matches}))
+    .sort((a,b)=>b.wr-a.wr).slice(0,8).forEach(({m,wr},i)=>{
+      sideP('wrc_'+m.id,1,62+i*SPACING,PW,PH,m.img,null,m.title,
+        `${Math.round(wr*100)}% win rate · ${state.globalRatings[m.id].wins}W/${state.globalRatings[m.id].matches}`,i<3?i+1:null,null,'movie');
+    });
+
+  // Grand Finale (z 72–78): #1 huge on both sides, #2/#3 flanking
+  if(rankedMovies.length>0){
+    const k=rankedMovies[0];
+    const kg=state.globalRatings[k.id]||{elo:1000,wins:0};
+    sideP('king_l',-1,76,3.0,PH*1.05,k.img,null,k.title,`👑 #1 ALL-TIME · ELO ${kg.elo} · ${kg.wins}W`,1,null,'movie');
+    sideP('king_r',1,76,3.0,PH*1.05,k.img,null,k.title,`👑 #1 ALL-TIME · ELO ${kg.elo} · ${kg.wins}W`,1,null,'movie');
+    if(rankedMovies[1]) sideP('fin2',-1,71,PW,PH,rankedMovies[1].img,null,rankedMovies[1].title,`#2 ALL-TIME · ELO ${(state.globalRatings[rankedMovies[1].id]||{}).elo||1000}`,2,null,'movie');
+    if(rankedMovies[2]) sideP('fin3',1,71,PW,PH,rankedMovies[2].img,null,rankedMovies[2].title,`#3 ALL-TIME · ELO ${(state.globalRatings[rankedMovies[2].id]||{}).elo||1000}`,3,null,'movie');
+  }
+
+  function collectPainting(p){
+    if(!p)return;
+    if(collected.has(p.id)){if(p.type==='movie'&&p.imgEl)showMovieModal(p.id.replace(/^\w+_/,''));return;}
+    collected.add(p.id);try{localStorage.setItem(collectKey,JSON.stringify([...collected]));}catch(e){}
+    const t=document.getElementById('museum-collect-toast');
+    if(t){t.textContent=`✦ "${p.title}" collected!`;t.style.display='block';setTimeout(()=>t.style.display='none',2000);}
+  }
+
+  // ── Painting renderer ── flat-on-wall, world-space frame ──
+  function drawPaintings(){
+    const cy=Math.cos(cam.yaw),sy=Math.sin(cam.yaw);
+    const cp=Math.cos(cam.pitch),sp=Math.sin(cam.pitch);
+    const pitchOff=cam.pitch*H*0.6;
+
+    function pr(wx,wy,wz){
+      const dx=wx-cam.x,dz=wz-cam.z;
+      const rx=dx*cy-dz*sy,rz=dx*sy+dz*cy,ry=wy-EYE;
+      if(rz<=0.05)return null;
+      const pz=rz*cp-ry*sp,py=rz*sp+ry*cp;
+      if(pz<=0.05)return null;
+      return{sx:W/2+(rx/pz)*W/(2*Math.tan(HALF_FOV)),
+             sy:H/2-(py/pz)*W/(2*Math.tan(HALF_FOV))*(H/W)+pitchOff,
+             d:pz};
+    }
+
+    // Project all 4 corners of a world-space rect on the wall
+    function projRect(wx,wy0,wy1,wz0,wz1){
+      const tl=pr(wx,wy1,wz0),tr=pr(wx,wy1,wz1);
+      const br=pr(wx,wy0,wz1),bl=pr(wx,wy0,wz0);
+      return(tl&&tr&&br&&bl)?[tl,tr,br,bl]:null;
+    }
+
+    function poly(pts,style){
+      if(!pts)return;
+      ctx.fillStyle=style;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].sx,pts[0].sy);
+      pts.slice(1).forEach(p=>ctx.lineTo(p.sx,p.sy));
+      ctx.closePath();ctx.fill();
+    }
+
+    // Draw image warped into a projected quad using 2 triangles
+    // Perspective-correct texture mapping — auto-detects left/right order from screen positions
+    function drawImageInQuad(img,pts){
+      if(!pts||!img||!img.complete||!img.naturalWidth)return;
+      const[tl,tr,br,bl]=pts;
+      if([tl,tr,br,bl].some(p=>p.d<0.1))return;
+      // Auto-detect: if tl is to the RIGHT of tr, image is flipped (right wall perspective)
+      const flip=tl.sx>tr.sx;
+      const iw=img.naturalWidth,ih=img.naturalHeight;
+      function drawTri(x0,y0,u0,v0,x1,y1,u1,v1,x2,y2,u2,v2){
+        const det=(u1-u0)*(v2-v0)-(u2-u0)*(v1-v0);
+        if(Math.abs(det)<1)return;
+        const a=((x1-x0)*(v2-v0)-(x2-x0)*(v1-v0))/det;
+        const b=((y1-y0)*(v2-v0)-(y2-y0)*(v1-v0))/det;
+        const c=((x2-x0)*(u1-u0)-(x1-x0)*(u2-u0))/det;
+        const d=((y2-y0)*(u1-u0)-(y1-y0)*(u2-u0))/det;
+        const e=x0-a*u0-c*v0,f=y0-b*u0-d*v0;
+        if(!isFinite(a)||!isFinite(b)||!isFinite(c)||!isFinite(d)||
+           Math.abs(a)>200||Math.abs(d)>200)return;
+        ctx.save();
+        ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y1);ctx.lineTo(x2,y2);ctx.closePath();ctx.clip();
+        ctx.transform(a,b,c,d,e,f);
+        ctx.drawImage(img,0,0);
+        ctx.restore();
+      }
+      if(!flip){
+        // tl=left, tr=right (left wall)
+        drawTri(tl.sx,tl.sy,0,0,   tr.sx,tr.sy,iw,0,  bl.sx,bl.sy,0,ih);
+        drawTri(tr.sx,tr.sy,iw,0,  br.sx,br.sy,iw,ih, bl.sx,bl.sy,0,ih);
+      } else {
+        // tl=right, tr=left (right wall) — swap left/right image edges
+        drawTri(tr.sx,tr.sy,0,0,   tl.sx,tl.sy,iw,0,  br.sx,br.sy,0,ih);
+        drawTri(tl.sx,tl.sy,iw,0,  bl.sx,bl.sy,iw,ih, br.sx,br.sy,0,ih);
+      }
+    }
+
+    // Collect visible paintings sorted back-to-front
+    const vis=[];
+    paintings.forEach(p=>{
+      const dx=p.px-cam.x,dz=p.pz-cam.z,dist=Math.sqrt(dx*dx+dz*dz);
+      if(dist>26)return;
+      if((cam.x-p.px)*p.nx+(cam.z-p.pz)*p.nz<0.05)return;
+      if(Math.abs(p.px)>HW+0.5&&Math.abs(cam.x)<=HW-0.1)return; // wing only visible from inside wing
+      if(p.pz<-0.5&&cam.z>-1.0)return; // Gods of Olympus paintings only visible deep in Gods hall
+      // World-space corners: painting is on wall at p.px, extends ±pw/2 along z, ±ph/2 vertically
+      const z0=p.pz-p.pw/2, z1=p.pz+p.pw/2;
+      const y0=EYE-p.ph/2, y1=EYE+p.ph/2;
+      const outer=projRect(p.px,y0,y1,z0,z1);
+      if(!outer)return;
+      // Cull if offscreen
+      const sxs=outer.map(c=>c.sx);
+      if(Math.max(...sxs)<-30||Math.min(...sxs)>W+30)return;
+      const avgD=outer.reduce((s,c)=>s+c.d,0)/4;
+      const alpha=Math.max(0,Math.min(1,2.0-dist*0.075));
+      if(alpha<0.04)return;
+      vis.push({p,outer,z0,z1,y0,y1,dist,avgD,alpha});
+    });
+    vis.sort((a,b)=>b.dist-a.dist);
+
+    nearestPainting=null;let minD=3.5;
+
+    vis.forEach(({p,outer,z0,z1,y0,y1,dist,alpha})=>{
+      const[tl,tr,br,bl]=outer;
+      if(dist<minD){minD=dist;nearestPainting=p;}
+      const bv=Math.max(0.35,Math.min(1,1.18-dist*0.036));
+      ctx.save();ctx.globalAlpha=alpha;
+
+      // Frame: dark border then gold — all in world space, flat on wall
+      const FRAME=0.06; // world-space frame thickness
+      const outerF=projRect(p.px,y0-FRAME,y1+FRAME,z0-FRAME,z1+FRAME);
+      const innerF=projRect(p.px,y0+FRAME*0.5,y1-FRAME*0.5,z0+FRAME*0.5,z1-FRAME*0.5);
+      if(!outerF||!innerF)return; // skip if any corner behind camera
+      // Content area always drawn (image or placard)
+      poly(innerF,`rgb(${Math.round(228*bv)},${Math.round(214*bv)},${Math.round(182*bv)})`);
+
+      if(innerF){
+        const[itl,itr,ibr,ibl]=innerF;
+        // Use all-4-corner bbox for correct left AND right wall handling
+        const minX=Math.min(itl.sx,itr.sx,ibr.sx,ibl.sx),maxX=Math.max(itl.sx,itr.sx,ibr.sx,ibl.sx);
+        const minY=Math.min(itl.sy,itr.sy,ibr.sy,ibl.sy),maxY=Math.max(itl.sy,itr.sy,ibr.sy,ibl.sy);
+        const pw2=Math.max(1,maxX-minX),ph2=Math.max(1,maxY-minY);
+
+        if(p.imgEl&&p.imgEl.complete&&p.imgEl.naturalWidth>0){
+          drawImageInQuad(p.imgEl,innerF);
+          // Glass sheen clipped to actual quad
+          ctx.save();
+          ctx.beginPath();ctx.moveTo(itl.sx,itl.sy);ctx.lineTo(itr.sx,itr.sy);ctx.lineTo(ibr.sx,ibr.sy);ctx.lineTo(ibl.sx,ibl.sy);ctx.closePath();ctx.clip();
+          const gl=ctx.createLinearGradient(minX,minY,maxX,maxY);
+          gl.addColorStop(0,'rgba(255,255,255,0.28)');gl.addColorStop(0.3,'rgba(255,255,255,0.03)');gl.addColorStop(0.5,'transparent');
+          ctx.fillStyle=gl;ctx.fillRect(minX,minY,pw2,ph2);
+          if(collected.has(p.id)){ctx.fillStyle='rgba(200,168,64,0.18)';ctx.fillRect(minX,minY,pw2,ph2);}
+          ctx.restore();
+          // Caption: perspective-correct polygon using lerped innerF bottom corners
+          const capFrac=0.14; // fraction of painting height for caption
+          // Lerp up from bottom corners toward top corners
+          const capTLsx=ibl.sx+(itl.sx-ibl.sx)*capFrac, capTLsy=ibl.sy+(itl.sy-ibl.sy)*capFrac;
+          const capTRsx=ibr.sx+(itr.sx-ibr.sx)*capFrac, capTRsy=ibr.sy+(itr.sy-ibr.sy)*capFrac;
+          ctx.fillStyle='rgba(6,3,0,0.86)';
+          ctx.beginPath();
+          ctx.moveTo(capTLsx,capTLsy);ctx.lineTo(capTRsx,capTRsy);
+          ctx.lineTo(ibr.sx,ibr.sy);ctx.lineTo(ibl.sx,ibl.sy);
+          ctx.closePath();ctx.fill();
+          // Text at projected center of caption polygon
+          // Center on midpoint of bottom edge — stays aligned at all viewing angles
+          const capCX3=(ibl.sx+ibr.sx)*0.5;
+          const capCY3=(ibl.sy+ibr.sy)*0.5-(Math.abs(ibl.sy-capTLsy)+Math.abs(ibr.sy-capTRsy))*0.25;
+          // Width: use narrower of top/bottom of caption to guarantee text fits
+          const capW3=Math.max(20,Math.min(Math.abs(ibr.sx-ibl.sx),Math.abs(capTRsx-capTLsx)));
+          ctx.textAlign='center';
+          let szT=Math.min(12,capW3*0.1);ctx.font=`bold ${szT}px Cinzel,serif`;
+          while(szT>5&&ctx.measureText(p.title||'').width>capW3*0.88){szT-=0.5;ctx.font=`bold ${szT}px Cinzel,serif`;}
+          ctx.fillStyle=`rgba(255,238,145,${alpha})`;
+          ctx.fillText(p.title||'',capCX3,capCY3-szT*0.2);
+          let szS=Math.min(9,capW3*0.068);ctx.font=`${szS}px Cinzel,serif`;
+          const sub=p.sub||'';
+          while(szS>4&&ctx.measureText(sub).width>capW3*0.88){szS-=0.5;ctx.font=`${szS}px Cinzel,serif`;}
+          ctx.fillStyle=`rgba(210,185,88,${alpha*0.88})`;
+          ctx.fillText(sub,capCX3,capCY3+szS*0.9);
+        } else {
+          // Placard
+          ctx.textAlign='center';
+          const cx2=minX+pw2*0.5,cy2=minY+ph2*0.5;
+          // Emoji — 26% of height
+          const eSz=Math.min(ph2*0.26,pw2*0.5,48);
+          ctx.font=`${eSz}px serif`;ctx.fillStyle=`rgba(50,28,2,${alpha})`;
+          ctx.fillText(p.emoji||'🎬',cx2,minY+ph2*0.32);
+          // Title — fit to width
+          let tSz=Math.min(ph2*0.13,pw2*0.16,18);ctx.font=`bold ${tSz}px Cinzel,serif`;
+          const titleStr=p.title||'';
+          while(tSz>6&&ctx.measureText(titleStr).width>pw2*0.86){tSz-=0.5;ctx.font=`bold ${tSz}px Cinzel,serif`;}
+          ctx.fillStyle=p.playerColor||`rgba(35,16,0,${alpha})`;
+          ctx.fillText(titleStr,cx2,minY+ph2*0.54);
+          // Sub — fit to width
+          let sSz=Math.min(ph2*0.08,pw2*0.1,11);ctx.font=`${sSz}px Cinzel,serif`;
+          const subStr=p.sub||'';
+          while(sSz>5&&ctx.measureText(subStr).width>pw2*0.86){sSz-=0.5;ctx.font=`${sSz}px Cinzel,serif`;}
+          ctx.fillStyle=`rgba(85,52,8,${alpha*0.9})`;
+          ctx.fillText(subStr,cx2,minY+ph2*0.7);
+        }
+      }
+
+      // Rank medal in top corner of frame (world-space position)
+      if(p.rankNum&&p.rankNum<=3&&innerF){
+        const[otl]=innerF;
+        ctx.font=`${Math.max(10,14*bv)}px serif`;ctx.textAlign='left';
+        ctx.fillStyle=`rgba(255,215,55,${alpha})`;
+        ctx.fillText(['🥇','🥈','🥉'][p.rankNum-1],otl.sx+3,otl.sy+Math.max(13,16*bv));
+      }
+
+      ctx.restore();
+    });
+
+    // Room signs shown in 2D HUD
+  }
+
+    // ── Input ──
+  const kd=e=>{keys[e.key]=true;keys[e.code]=true;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key))e.preventDefault();};
+  const ku=e=>{keys[e.key]=false;keys[e.code]=false;};
+  document.addEventListener('keydown',kd);document.addEventListener('keyup',ku);
+  // Desktop: click to collect only (no drag - use arrow keys to look)
+  canvas.style.cursor='default';
+  canvas.addEventListener('click',()=>{if(nearestPainting)collectPainting(nearestPainting);});
+  let lt=null;
+  canvas.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===1)lt={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:false});
+  canvas.addEventListener('touchmove',e=>{e.preventDefault();if(!lt||e.touches.length!==1)return;cam.yaw+=(e.touches[0].clientX-lt.x)*0.006;cam.pitch=Math.max(-0.45,Math.min(0.45,cam.pitch+(e.touches[0].clientY-lt.y)*0.005));lt={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:false});
+  canvas.addEventListener('touchend',e=>{if(e.changedTouches[0]&&lt){const dx=e.changedTouches[0].clientX-lt.x,dy=e.changedTouches[0].clientY-lt.y;if(Math.sqrt(dx*dx+dy*dy)<8&&nearestPainting)collectPainting(nearestPainting);}lt=null;});
+  let joyDx=0,joyDy=0,joyOn=false;
+  const jP=document.getElementById('mjoy-pad'),jK=document.getElementById('mjoy-knob');
+  if(jP){
+    jP.addEventListener('touchstart',e=>{e.stopPropagation();e.preventDefault();joyOn=true;},{passive:false});
+    jP.addEventListener('touchmove',e=>{e.stopPropagation();e.preventDefault();const rc=jP.getBoundingClientRect();const dx=e.touches[0].clientX-rc.left-36,dy=e.touches[0].clientY-rc.top-36;const len=Math.sqrt(dx*dx+dy*dy)||1,r=Math.min(len,22);joyDx=dx/len*r/22;joyDy=dy/len*r/22;jK.style.left=(22+joyDx*22)+'px';jK.style.top=(22+joyDy*22)+'px';},{passive:false});
+    jP.addEventListener('touchend',e=>{e.stopPropagation();joyOn=false;joyDx=0;joyDy=0;if(jK){jK.style.left='22px';jK.style.top='22px';}});
+  }
+
+  let af=null;
+  function loop(){
+    if(!running||!document.getElementById('museum-canvas')){cancelAnimationFrame(af);return;}
+    const S=0.08,R=0.04;
+    if(keys['ArrowLeft'])cam.yaw-=R;if(keys['ArrowRight'])cam.yaw+=R;
+    let mx=0,mz=0;
+    if(keys['ArrowUp']||keys['KeyW']||keys['w']||keys['W']){mx+=Math.sin(cam.yaw)*S;mz+=Math.cos(cam.yaw)*S;}
+    if(keys['ArrowDown']||keys['KeyS']||keys['s']||keys['S']){mx-=Math.sin(cam.yaw)*S;mz-=Math.cos(cam.yaw)*S;}
+    if(keys['KeyA']||keys['a']||keys['A']){mx-=Math.cos(cam.yaw)*S;mz+=Math.sin(cam.yaw)*S;}
+    if(keys['KeyD']||keys['d']||keys['D']){mx+=Math.cos(cam.yaw)*S;mz-=Math.sin(cam.yaw)*S;}
+    if(joyOn){const S2=0.07;mx+=(Math.sin(cam.yaw)*(-joyDy)+Math.cos(cam.yaw)*joyDx)*S2;mz+=(Math.cos(cam.yaw)*(-joyDy)-Math.sin(cam.yaw)*joyDx)*S2;}
+    if(mx||mz){
+      const nx=cam.x+mx,nz=cam.z+mz;
+      const inM=Math.abs(nx)<HW-0.3&&nz>-19.5&&nz<79.6;
+      const inL=nx>-HW-4.7&&nx<-HW+0.2&&((nz>LW0+0.3&&nz<LW1-0.3)||(nz>LW2+0.3&&nz<LW3-0.3));
+      const inR=nx>HW-0.2&&nx<HW+4.7&&((nz>LW0+0.3&&nz<LW1-0.3)||(nz>LW2+0.3&&nz<LW3-0.3));
+      if(inM||inL||inR){cam.x=nx;cam.z=nz;}
+    }
+    drawScene();drawPaintings();
+    const vg=ctx.createRadialGradient(W/2,H/2,H*0.08,W/2,H/2,H*0.8);
+    vg.addColorStop(0,'transparent');vg.addColorStop(1,'rgba(10,6,1,0.3)');
+    ctx.fillStyle=vg;ctx.fillRect(0,0,W,H);
+
+    const rooms=[
+      {n:'GODS OF OLYMPUS',x0:-HW,x1:HW,z0:-20,z1:0},
+      {n:'GRAND ENTRANCE',x0:-HW,x1:HW,z0:-2,z1:6},
+      {n:'GALLERY OF CHAMPIONS',x0:-HW,x1:HW,z0:6,z1:30},
+      {n:'ARCADE RECORDS WING',x0:-HW-6,x1:-HW,z0:LW0,z1:LW1},
+      {n:'PLAYERS HALL',x0:HW,x1:HW+6,z0:LW0,z1:LW1},
+      {n:'THE INNER SANCTUM',x0:-HW,x1:HW,z0:30,z1:60},
+      {n:'WING OF CONTROVERSY',x0:-HW-6,x1:-HW,z0:LW2,z1:LW3},
+      {n:'HALL OF CHAMPIONS',x0:HW,x1:HW+6,z0:LW2,z1:LW3},
+      {n:'VAULT OF LEGENDS',x0:-HW,x1:HW,z0:60,z1:75},
+      {n:'THE GRAND FINALE',x0:-HW,x1:HW,z0:75,z1:80},
+    ];
+    // room already computed above
+    // Draw room name as bold 2D canvas overlay
+    const room=rooms.find(r=>cam.x>=r.x0&&cam.x<=r.x1&&cam.z>=r.z0&&cam.z<=r.z1);
+    const roomName=room?room.n:'';
+    if(roomName){
+      const rfs=Math.max(14,Math.min(22,W*0.028));
+      ctx.save();
+      ctx.font=`bold ${rfs}px Cinzel,serif`;
+      const rtw=ctx.measureText(roomName).width;
+      // Background pill
+      ctx.fillStyle='rgba(12,7,0,0.62)';
+      ctx.beginPath();
+      ctx.roundRect(W/2-rtw/2-18,10,rtw+36,rfs+16,8);
+      ctx.fill();
+      // Gold border
+      ctx.strokeStyle='rgba(200,168,40,0.7)';
+      ctx.lineWidth=1.5;
+      ctx.stroke();
+      // Text
+      ctx.fillStyle='rgba(230,195,60,0.98)';
+      ctx.textAlign='center';
+      ctx.shadowBlur=12;ctx.shadowColor='rgba(200,160,30,0.8)';
+      ctx.fillText(roomName,W/2,10+rfs+4);
+      ctx.restore();
+    }
+    const re=document.getElementById('museum-room');if(re)re.textContent='';
+    const lbl=document.getElementById('museum-label');
+    if(lbl){
+      if(nearestPainting){
+        const isC=collected.has(nearestPainting.id);
+        lbl.style.display='block';
+        lbl.innerHTML=`<strong style="color:#1e1000;display:block;margin-bottom:3px">${nearestPainting.title}</strong><span style="font-size:10px;color:#786018">${nearestPainting.sub}</span><br><span style="font-size:10px;color:${isC?'#786018':'#3a5818'}">${isC?'✦ Collected':'Click to collect'}</span>`;
+        lbl.onclick=()=>collectPainting(nearestPainting);
+      }else{lbl.style.display='none';lbl.onclick=null;}
+    }
+    const ce=document.getElementById('museum-collection');if(ce)ce.textContent=`✦ ${collected.size} collected`;
+    af=requestAnimationFrame(loop);
+  }
+  loop();
+
+  const obs=new MutationObserver(()=>{if(!document.getElementById('museum-canvas')){running=false;document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);obs.disconnect();}});
+  obs.observe(el,{childList:true});
 }
 
 loadFromDB();
