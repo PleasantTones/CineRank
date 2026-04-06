@@ -4414,9 +4414,9 @@ async function renderHallOfFame() {
   });
 
   // Gallery of Champions (z 6–30): top 20, alternating L/R
-  rankedMovies.slice(0,16).forEach((m,i)=>{
+  rankedMovies.slice(0,5).forEach((m,i)=>{
     const gr=state.globalRatings[m.id]||{elo:1000,wins:0,matches:0};
-    sideP('mv_'+m.id,i%2===0?-1:1, 14+i*SPACING, PW,PH, m.img,null,m.title,
+    sideP('mv_'+m.id,i%2===0?-1:1, 8+i*1.6, PW,PH, m.img,null,m.title,
       `ELO ${gr.elo} · Rank #${i+1} · ${gr.wins}W`,i+1,null,'movie');
   });
 
@@ -4443,12 +4443,15 @@ async function renderHallOfFame() {
   });
 
   // Inner Sanctum (z 31–58): most divisive
-  [...MOVIES].filter(m=>PLAYERS.some(p=>state.players[p]?.ratings?.[m.id]?.matches>0)).map(m=>{
+  // Inner Sanctum: most divisive movies by ELO spread, fallback to all movies
+  const controversialMovies = [...MOVIES].map(m=>{
     const elos=PLAYERS.map(p=>(state.players[p]?.ratings?.[m.id]?.elo)||1000);
     return{m,sp:Math.max(...elos)-Math.min(...elos)};
-  }).filter(x=>x.sp>10).sort((a,b)=>b.sp-a.sp).slice(0,10).forEach(({m,sp},i)=>{
-    sideP('con_'+m.id,i%2===0?-1:1,32+i*SPACING,PW,PH,m.img,null,m.title,
-      `Most divisive · ${sp} ELO spread across players`,null,null,'movie');
+  }).sort((a,b)=>b.sp-a.sp);
+  // Use top 10 by spread (works even if spread is 0)
+  controversialMovies.slice(0,9).forEach(({m,sp},i)=>{
+    sideP('con_'+m.id,i%2===0?-1:1,31+i*2.9,PW,PH,m.img,null,m.title,
+      sp>0?`Most divisive · ${sp} ELO spread`:`#${i+1} in rotation`,null,null,'movie');
   });
 
   // Wing of Controversy (left wing 2, z 41–55): per-player hot takes
@@ -4474,28 +4477,38 @@ async function renderHallOfFame() {
     }
   });
 
-  // Vault of Legends (z 61–79): left=most wins, right=highest win rate
-  [...MOVIES].filter(m=>state.globalRatings[m.id]&&state.globalRatings[m.id].wins>0)
-    .sort((a,b)=>state.globalRatings[b.id].wins-state.globalRatings[a.id].wins)
-    .slice(0,8).forEach((m,i)=>{
-      sideP('vlt_'+m.id,-1,62+i*SPACING,PW,PH,m.img,null,m.title,
-        `${state.globalRatings[m.id].wins} all-time wins · ${state.globalRatings[m.id].matches} matchups`,i<3?i+1:null,null,'movie');
-    });
-  [...MOVIES].filter(m=>state.globalRatings[m.id]&&state.globalRatings[m.id].matches>=5)
+  // Vault of Legends (z 61–74): fallback to rankedMovies if no vote data yet
+  const vltSrc=[...MOVIES].filter(m=>state.globalRatings[m.id]&&state.globalRatings[m.id].wins>0)
+    .sort((a,b)=>state.globalRatings[b.id].wins-state.globalRatings[a.id].wins);
+  (vltSrc.length>=3?vltSrc:rankedMovies).slice(0,6).forEach((m,i)=>{
+    const gr=state.globalRatings[m.id]||{wins:0,matches:0};
+    sideP('vlt_'+m.id,-1,61+i*2.4,PW,PH,m.img,null,m.title,
+      gr.wins>0?`${gr.wins} all-time wins · ${gr.matches} matchups`:`Rank #${i+1} · ELO ${gr.elo||1000}`,i<3?i+1:null,null,'movie');
+  });
+  const wrcSrc=[...MOVIES].filter(m=>state.globalRatings[m.id]&&state.globalRatings[m.id].matches>=5)
     .map(m=>({m,wr:state.globalRatings[m.id].wins/state.globalRatings[m.id].matches}))
-    .sort((a,b)=>b.wr-a.wr).slice(0,8).forEach(({m,wr},i)=>{
-      sideP('wrc_'+m.id,1,62+i*SPACING,PW,PH,m.img,null,m.title,
-        `${Math.round(wr*100)}% win rate · ${state.globalRatings[m.id].wins}W/${state.globalRatings[m.id].matches}`,i<3?i+1:null,null,'movie');
-    });
+    .sort((a,b)=>b.wr-a.wr);
+  (wrcSrc.length>=3?wrcSrc.map(x=>x.m):rankedMovies.slice(6,12)).slice(0,6).forEach((m,i)=>{
+    const gr=state.globalRatings[m.id]||{wins:0,matches:0};
+    const wr=gr.matches>0?Math.round(gr.wins/gr.matches*100):0;
+    sideP('wrc_'+m.id,1,61+i*2.4,PW,PH,m.img,null,m.title,
+      gr.matches>=5?`${wr}% win rate · ${gr.wins}W/${gr.matches}`:`Rank #${i+7} · ELO ${gr.elo||1000}`,i<3?i+1:null,null,'movie');
+  });
 
-  // Grand Finale (z 72–78): #1 huge on both sides, #2/#3 flanking
+  // Grand Finale: #1 on END WALL straight ahead, #2 left, #3 right
   if(rankedMovies.length>0){
     const k=rankedMovies[0];
     const kg=state.globalRatings[k.id]||{elo:1000,wins:0};
-    sideP('king_l',-1,76,3.0,PH*1.05,k.img,null,k.title,`👑 #1 ALL-TIME · ELO ${kg.elo} · ${kg.wins}W`,1,null,'movie');
-    sideP('king_r',1,76,3.0,PH*1.05,k.img,null,k.title,`👑 #1 ALL-TIME · ELO ${kg.elo} · ${kg.wins}W`,1,null,'movie');
-    if(rankedMovies[1]) sideP('fin2',-1,71,PW,PH,rankedMovies[1].img,null,rankedMovies[1].title,`#2 ALL-TIME · ELO ${(state.globalRatings[rankedMovies[1].id]||{}).elo||1000}`,2,null,'movie');
-    if(rankedMovies[2]) sideP('fin3',1,71,PW,PH,rankedMovies[2].img,null,rankedMovies[2].title,`#3 ALL-TIME · ELO ${(state.globalRatings[rankedMovies[2].id]||{}).elo||1000}`,3,null,'movie');
+    // #1 on the end wall (nx=0, nz=-1, flat against back wall)
+    const imgElKing=k.img?Object.assign(new Image(),{src:k.img}):null;
+    paintings.push({id:'king_end',px:0,pz:HL-0.4,nx:0,nz:-1,pw:PW*1.3,ph:PH,
+      imgEl:imgElKing,emoji:null,title:k.title,
+      sub:`👑 #1 ALL-TIME · ELO ${kg.elo} · ${kg.wins}W`,rankNum:1,playerColor:null,type:'movie'});
+    // #2 on left wall, #3 on right — spaced so they don't overlap
+    if(rankedMovies[1]) sideP('fin2',-1,77,PW*1.2,PH,rankedMovies[1].img,null,rankedMovies[1].title,
+      `#2 ALL-TIME · ELO ${(state.globalRatings[rankedMovies[1].id]||{}).elo||1000}`,2,null,'movie');
+    if(rankedMovies[2]) sideP('fin3',1,77,PW*1.2,PH,rankedMovies[2].img,null,rankedMovies[2].title,
+      `#3 ALL-TIME · ELO ${(state.globalRatings[rankedMovies[2].id]||{}).elo||1000}`,3,null,'movie');
   }
 
   function collectPainting(p){
@@ -4583,10 +4596,20 @@ async function renderHallOfFame() {
       if((cam.x-p.px)*p.nx+(cam.z-p.pz)*p.nz<0.05)return;
       if(Math.abs(p.px)>HW+0.5&&Math.abs(cam.x)<=HW-0.1)return; // wing only visible from inside wing
       if(p.pz<-0.5&&cam.z>-1.0)return; // Gods of Olympus paintings only visible deep in Gods hall
+      // Don't show paintings through transverse walls
+      if([0,30,60,75].some(wz=>(cam.z<wz&&p.pz>wz+1)||(cam.z>wz&&p.pz<wz-1)))return;
       // World-space corners: painting is on wall at p.px, extends ±pw/2 along z, ±ph/2 vertically
       const z0=p.pz-p.pw/2, z1=p.pz+p.pw/2;
       const y0=EYE-p.ph/2, y1=EYE+p.ph/2;
-      const outer=projRect(p.px,y0,y1,z0,z1);
+      // Use tangent-correct projection — works for side walls AND end wall
+      const _tx=-p.nz,_tz=p.nx,_hw=p.pw/2;
+      function projP(fw){
+        const h=_hw+fw, fy0=y0-fw, fy1=y1+fw;
+        const c=[pr(p.px-_tx*h,fy1,p.pz-_tz*h),pr(p.px+_tx*h,fy1,p.pz+_tz*h),
+                 pr(p.px+_tx*h,fy0,p.pz+_tz*h),pr(p.px-_tx*h,fy0,p.pz-_tz*h)];
+        return c.every(v=>v)?c:null;
+      }
+      const outer=projP(0);
       if(!outer)return;
       // Cull if offscreen
       const sxs=outer.map(c=>c.sx);
@@ -4606,11 +4629,18 @@ async function renderHallOfFame() {
       const bv=Math.max(0.35,Math.min(1,1.18-dist*0.036));
       ctx.save();ctx.globalAlpha=alpha;
 
-      // Frame: dark border then gold — all in world space, flat on wall
-      const FRAME=0.06; // world-space frame thickness
-      const outerF=projRect(p.px,y0-FRAME,y1+FRAME,z0-FRAME,z1+FRAME);
-      const innerF=projRect(p.px,y0+FRAME*0.5,y1-FRAME*0.5,z0+FRAME*0.5,z1-FRAME*0.5);
-      if(!outerF||!innerF)return; // skip if any corner behind camera
+      // Frame: tangent-correct inline projection
+      const FRAME=0.06;
+      const _tx2=-p.nz,_tz2=p.nx,_hw2=p.pw/2;
+      function projCorners(fw){
+        const h=_hw2+fw,fy0=y0-fw,fy1=y1+fw;
+        const c=[pr(p.px-_tx2*h,fy1,p.pz-_tz2*h),pr(p.px+_tx2*h,fy1,p.pz+_tz2*h),
+                 pr(p.px+_tx2*h,fy0,p.pz+_tz2*h),pr(p.px-_tx2*h,fy0,p.pz-_tz2*h)];
+        return c.every(v=>v)?c:null;
+      }
+      const outerF=projCorners(FRAME);
+      const innerF=projCorners(-FRAME*0.5);
+      if(!outerF||!innerF)return;
       // Content area always drawn (image or placard)
       poly(innerF,`rgb(${Math.round(228*bv)},${Math.round(214*bv)},${Math.round(182*bv)})`);
 
