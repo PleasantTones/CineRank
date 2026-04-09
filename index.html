@@ -3,12 +3,52 @@
 <head>
 <meta charset="UTF-8"/>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Special+Elite&family=DM+Sans:wght@500;600&display=swap" rel="stylesheet">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0a0800">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>CineRank</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0c0c0e; color: #f0f0f0; min-height: 100vh; }
+  * { -webkit-tap-highlight-color: transparent; }
+  /* Light mode via filter inversion */
+  body.light-mode { filter: invert(1) hue-rotate(180deg) brightness(0.88) sepia(0.12); background:#ede8de; }
+  body.light-mode img,
+  body.light-mode canvas,
+  body.light-mode .movie-poster,
+  body.light-mode .movie-modal-poster { filter: invert(1) hue-rotate(180deg) brightness(1.14) sepia(0); }
+  .theme-toggle { position:fixed; top:12px; right:12px; width:38px; height:38px; border-radius:50%; border:1px solid #3a3010; background:#141416; color:#c8a040; font-size:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:500; box-shadow:0 2px 8px rgba(0,0,0,0.4); transition:all 0.2s; }
+  body.light-mode .theme-toggle { background:#f5f0e8; border-color:#c8a040; }
+
+  /* Light mode border darkening — compensate for inversion making dark borders too faint */
+  body.light-mode .movie-card,
+  body.light-mode .arcade-card,
+  body.light-mode .arcade-game,
+  body.light-mode .lb-table,
+  body.light-mode .lb-table th,
+  body.light-mode .lb-table td,
+  body.light-mode .top5-card,
+  body.light-mode .my-card,
+  body.light-mode .divides-card,
+  body.light-mode .hall-achievement,
+  body.light-mode .arcade-option,
+  body.light-mode .badge-blue,
+  body.light-mode .badge-gray,
+  body.light-mode .float-chat-input,
+  body.light-mode .chat-input,
+  body.light-mode .name-row select,
+  body.light-mode .movie-modal,
+  body.light-mode .arcade-score-pill,
+  body.light-mode [style*="border:1px solid"],
+  body.light-mode [style*="border: 1px solid"] { border-color: rgba(0,0,0,0.2) !important; }
+
+  body.light-mode .tabs-wrap { border: 1px solid rgba(0,0,0,0.15) !important; }
+  body.light-mode .progress-bar { border: 1px solid rgba(0,0,0,0.15) !important; }
+  body.light-mode .lb-table td,
+  body.light-mode .lb-table th { border-bottom-color: rgba(0,0,0,0.12) !important; }
+  html { overscroll-behavior: none; scroll-behavior: smooth; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0c0c0e; color: #f0f0f0; min-height: 100vh; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overscroll-behavior: none; }
   body::before { content:''; position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:0.03; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E"); background-size:128px 128px; }
   #app { max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
   .header { text-align: center; margin-bottom: 1.75rem; }
@@ -34,17 +74,17 @@
   .marquee-bulbs-side { position: absolute; top: 14px; bottom: 14px; display: flex; flex-direction: column; justify-content: space-between; }
   .marquee-bulbs-side.left { left: 8px; }
   .marquee-bulbs-side.right { right: 8px; }
-  .header-now-playing { font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: #b08c3a; font-family: 'Special Elite', monospace; margin-bottom: 12px; margin-top: 4px; }
-  .header h1 { font-size: 46px; font-weight: 700; color: #f5e6c0; letter-spacing: 0.12em; font-family: 'Playfair Display', Georgia, serif; line-height: 1; text-shadow: 0 0 40px rgba(232,200,74,0.15), 0 2px 4px rgba(0,0,0,0.8); }
+  .header-now-playing { font-size: 9px; letter-spacing: 0.4em; text-transform: uppercase; color: #b08c3a; font-family: 'Inter', sans-serif; font-weight: 300; margin-bottom: 12px; margin-top: 4px; }
+  .header h1 { font-size: 52px; font-weight: 600; color: #f5e6c0; letter-spacing: 0.08em; font-family: 'Inter', sans-serif; line-height: 1; text-shadow: 0 0 40px rgba(232,200,74,0.15), 0 2px 4px rgba(0,0,0,0.8); }
   .header-divider { width: 80%; height: 1px; background: linear-gradient(to right, transparent, #5a4518, transparent); margin: 10px auto; }
-  .header p { font-size: 10px; color: #888; margin-top: 0; letter-spacing: 0.25em; text-transform: uppercase; font-family: 'Special Elite', monospace; }
+  .header p { font-size: 10px; color: #888; margin-top: 0; letter-spacing: 0.25em; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 300; }
   .name-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 1.25rem; }
   .name-row label { font-size: 14px; color: #666; font-weight: 500; }
   .name-row select { padding: 9px 16px; border-radius: 10px; border: 1px solid #323236; font-size: 16px; background: #1c1c1f; color: #e8e8e8; min-width: 160px; cursor: pointer; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03); appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236a5020' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; transition: border-color 0.2s, box-shadow 0.2s; }
   .name-row select:hover { border-color: #5a4518; }
   .name-row select:focus { outline: none; border-color: #8a6c2a; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 0 0 2px rgba(138,108,42,0.2); }
   .tabs-wrap { display: flex; justify-content: center; background: #111113; border-radius: 10px; padding: 4px; gap: 4px; margin-bottom: 1.5rem; width: fit-content; margin-left: auto; margin-right: auto; }
-  .tab { padding: 8px 20px; font-size: 13px; cursor: pointer; background: transparent; border: none; color: #888; border-radius: 7px; font-weight: 500; transition: color 0.2s, background 0.18s, box-shadow 0.18s; letter-spacing: 0.02em; }
+  .tab { padding: 8px 20px; font-size: 13px; cursor: pointer; background: transparent; border: none; color: #888; border-radius: 7px; font-weight: 500; font-family: 'Inter', sans-serif; transition: color 0.2s, background 0.18s, box-shadow 0.18s; letter-spacing: 0.01em; }
   .tab.active { color: #e8e8e8; background: #1c1c1f; box-shadow: inset 0 1px 3px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.04); }
   .tab:hover:not(.active) { color: #888; background: #161618; }
   .stats-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 1rem; flex-wrap: wrap; }
@@ -55,8 +95,8 @@
   .progress-bar { width: 100%; height: 4px; background: #1e1a10; border-radius: 99px; margin-bottom: 1.5rem; box-shadow: inset 0 1px 2px rgba(0,0,0,0.4); }
   .progress-fill { height: 100%; background: #e0e0e0; border-radius: 99px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); box-shadow: 0 0 8px rgba(200,168,74,0.4); }
   .matchup-section { display: flex; gap: 1rem; align-items: stretch; }
-  .vs-label { display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #c8a040; flex-shrink: 0; width: 40px; letter-spacing: 0.04em; text-shadow: 0 0 16px rgba(200,168,74,0.5); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .movie-card { flex: 1; background: #141416; border: 1px solid #3a3010; border-radius: 16px; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 14px; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s; cursor: default; }
+  .vs-label { display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800; color: #c8a040; flex-shrink: 0; width: 40px; letter-spacing: 0.04em; text-shadow: 0 0 16px rgba(200,168,74,0.5); font-family: 'Inter', sans-serif; }
+  .movie-card { flex: 1; background: #141416; border: 1px solid #3a3010; border-radius: 16px; padding: 1.5rem 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 14px; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s; cursor: default; min-height: 420px; }
   .movie-card:hover { border-color: #6a5a20; transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.6), 0 0 60px rgba(200,168,74,0.06); }
   .movie-poster { width: 100%; max-width: 200px; aspect-ratio: 2/3; object-fit: cover; border-radius: 12px; background: #1c1c1f; display: block; transition: transform 0.3s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
   .movie-card:hover .movie-poster { transform: scale(1.03); }
@@ -76,6 +116,8 @@
   .skip-btn::after { content: ' →'; }
   .no-player-msg { text-align: center; padding: 3rem 1rem; font-size: 15px; color: #777; }
   .matchup-wrap { animation: fadeSlide 0.25s ease; }
+  .tab-content-enter { animation: tabFadeIn 0.2s ease both; }
+  @keyframes tabFadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
   @keyframes fadeSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
   .flash-winner { animation: flashGreen 0.4s ease forwards; }
   .flash-loser { animation: flashFade 0.4s ease forwards; }
@@ -192,7 +234,7 @@
   .chat-input:focus { border-color: #6a5a20; }
   .chat-send-btn { padding: 8px 16px; border-radius: 8px; background: #f5f0e8; color: #111; border: none; font-size: 13px; font-weight: 700; cursor: pointer; }
   .chat-send-btn:hover { background: #ede8d8; }
-  .streak-banner { display:flex; align-items:center; justify-content:center; gap:6px; background:#1a1a1f; border:1px solid #ffffff33; border-radius:8px; padding:6px 14px; margin-bottom:0.75rem; font-size:13px; color:#f0f0f0; font-weight:600; animation:fadeSlide 0.3s ease; }
+  .streak-banner { display:flex; align-items:center; justify-content:center; gap:6px; background:#1a1a1f; border:1px solid #ffffff33; border-radius:8px; padding:6px 14px; margin-bottom:0.75rem; font-size:13px; color:#f0f0f0; font-weight:600; animation:fadeSlide 0.3s ease; transition:opacity 0.3s ease; }
   .h2h-badge { font-size:10px; color:#777; text-align:center; margin-top:6px; letter-spacing:0.03em; }
   .lb-trend-up { font-size:11px; color:#4ade80; margin-left:4px; }
   .lb-trend-down { font-size:11px; color:#f87171; margin-left:4px; }
@@ -216,14 +258,14 @@
   .activity-text { flex: 1; color: #999; }
   .activity-text strong { color: #f0f0f0; }
   .controversial-badge { display: inline-flex; align-items: center; gap: 5px; background: #1a1a1f; border: 1px solid #333; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: #ccc; margin-top: 6px; }
-  .movie-modal-overlay { position:fixed; inset:0; background:rgba(8,6,2,0.92); z-index:600; display:flex; align-items:center; justify-content:center; padding:1rem; animation:fadeIn 0.2s ease; }
+  .movie-modal-overlay { position:fixed; inset:0; background:rgba(8,6,2,0.92); z-index:600; display:flex; align-items:center; justify-content:center; padding:1rem; animation:fadeIn 0.2s ease; cursor:pointer; }
   @keyframes fadeIn { from{opacity:0} to{opacity:1} }
   .movie-modal { background:#141416; border:1px solid #3a2e14; border-radius:16px; max-width:480px; width:100%; max-height:88vh; overflow-y:auto; animation:slideUp 0.25s ease; position:relative; }
   @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
   .movie-modal-header { display:flex; flex-direction:column; align-items:center; gap:12px; padding:1.25rem 1.25rem 1rem; border-bottom:1px solid #2a2a2e; text-align:center; }
   .movie-modal-poster { width:100px; height:150px; object-fit:cover; border-radius:10px; background:#1c1c1f; flex-shrink:0; box-shadow:0 4px 20px rgba(0,0,0,0.5); }
   .movie-modal-info { width:100%; }
-  .movie-modal-title { font-family:'DM Sans', -apple-system, sans-serif; font-size:19px; font-weight:600; color:#f5e6c0; line-height:1.25; margin-bottom:6px; text-align:center; letter-spacing:-0.01em; }
+  .movie-modal-title { font-family:'Inter', -apple-system, sans-serif; font-size:19px; font-weight:600; color:#f5e6c0; line-height:1.25; margin-bottom:6px; text-align:center; letter-spacing:-0.01em; }
   .movie-modal-meta { font-size:11px; color:#888; margin-bottom:8px; text-align:center; }
   .movie-modal-rating { display:flex; align-items:center; gap:6px; justify-content:center; }
   .imdb-badge { background:#f5c518; color:#000; font-size:11px; font-weight:800; padding:2px 6px; border-radius:4px; }
@@ -271,7 +313,7 @@
   .done-btn:hover { color: #c8a84a; border-color: #777; }
   .summary-overlay { position:fixed; inset:0; background:rgba(10,8,4,0.88); z-index:500; display:flex; align-items:center; justify-content:center; padding:1rem; }
   .summary-box { background:#141416; border:1px solid #3a2e14; border-radius:14px; padding:1.5rem; max-width:360px; width:100%; text-align:center; }
-  .summary-box h2 { font-family:'Playfair Display',serif; font-size:22px; color:#f5e6c0; margin-bottom:4px; }
+  .summary-box h2 { font-family:'Inter',sans-serif; font-size:22px; color:#f5e6c0; margin-bottom:4px; }
   .summary-box .summary-sub { font-size:11px; color:#777; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:1.25rem; }
   .summary-stat { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid #2a2a2e; font-size:13px; }
   .summary-stat:last-of-type { border-bottom:none; }
@@ -436,7 +478,7 @@
   }
 
   /* ═══════════════ HALL OF FAME ═══════════════ */
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Cinzel+Decorative:wght@700&display=swap');
+  /* Fonts loaded globally: Cormorant Garamond + Inter */
 
   #tab-hall {
     overflow-x: hidden;
@@ -450,6 +492,17 @@
   }
 
   /* Marble floor perspective */
+
+  /* Onboarding overlay */
+  .onboard-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;animation:fadeIn 0.3s ease; }
+  .onboard-card { background:#141416;border:1px solid #3a3010;border-radius:20px;padding:2rem 1.5rem;max-width:360px;width:100%;text-align:center; }
+  .onboard-icon { font-size:48px;margin-bottom:0.75rem; }
+  .onboard-title { font-size:20px;font-weight:800;color:#f0f0f0;margin-bottom:0.5rem; }
+  .onboard-body { font-size:14px;color:#888;line-height:1.6;margin-bottom:1.5rem; }
+  .onboard-dots { display:flex;gap:6px;justify-content:center;margin-bottom:1.25rem; }
+  .onboard-dot { width:7px;height:7px;border-radius:50%;background:#333; }
+  .onboard-dot.active { background:#c8a040; }
+  .onboard-btn { background:#f5f0e8;color:#111;border:none;border-radius:10px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;width:100%; }
   .hall-floor {
     position: relative;
     width: 100%;
@@ -487,7 +540,7 @@
     background: linear-gradient(90deg, transparent, #c8a840, #f5e070, #c8a840, transparent);
   }
   .hall-arch-label {
-    font-family: 'Cinzel', Georgia, serif;
+    font-family: 'Inter', sans-serif;
     font-size: 10px;
     letter-spacing: 0.35em;
     color: #8a6a20;
@@ -495,7 +548,7 @@
     margin-bottom: 6px;
   }
   .hall-arch-title {
-    font-family: 'Cinzel Decorative', 'Cinzel', Georgia, serif;
+    font-family: 'Inter', sans-serif; font-weight:700; letter-spacing:0.06em;
     font-size: clamp(22px, 6vw, 38px);
     font-weight: 700;
     color: #f5e070;
@@ -505,7 +558,7 @@
     margin-bottom: 4px;
   }
   .hall-arch-sub {
-    font-family: 'Cinzel', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 11px;
     color: #6a5020;
     letter-spacing: 0.2em;
@@ -527,7 +580,7 @@
     background: linear-gradient(90deg, transparent, rgba(200,168,64,0.4), transparent);
   }
   .hall-column-divider-label {
-    font-family: 'Cinzel', Georgia, serif;
+    font-family: 'Inter', sans-serif;
     font-size: 10px;
     letter-spacing: 0.25em;
     color: #c8a840;
@@ -578,7 +631,7 @@
     box-shadow: 0 12px 32px rgba(0,0,0,0.7), 0 0 20px rgba(200,168,64,0.12), inset 0 1px 0 rgba(200,168,64,0.2);
   }
   .hall-plaque-rank {
-    font-family: 'Cinzel', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 11px;
     color: #8a6a20;
     letter-spacing: 0.1em;
@@ -596,7 +649,7 @@
     box-shadow: 0 4px 12px rgba(0,0,0,0.6);
   }
   .hall-plaque-title {
-    font-family: 'Cinzel', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 10px;
     color: #d4aa50;
     line-height: 1.4;
@@ -638,7 +691,7 @@
   }
   .hall-trophy-icon { font-size: 28px; margin-bottom: 6px; }
   .hall-trophy-player {
-    font-family: 'Cinzel', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 12px;
     font-weight: 700;
     margin-bottom: 4px;
@@ -652,7 +705,7 @@
     margin-bottom: 6px;
   }
   .hall-trophy-stat {
-    font-family: 'Cinzel', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 18px;
     font-weight: 700;
     color: #f5d060;
@@ -685,7 +738,7 @@
   .hall-achievement.locked { opacity: 0.4; filter: grayscale(0.7); }
   .hall-achievement-icon { font-size: 22px; flex-shrink: 0; }
   .hall-achievement-name {
-    font-family: 'Cinzel', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 10px;
     color: #c8a840;
     letter-spacing: 0.05em;
@@ -697,7 +750,7 @@
   .hall-inscription {
     text-align: center;
     padding: 32px 20px;
-    font-family: 'Cinzel', serif;
+    font-family: 'Inter', sans-serif;
     font-size: 10px;
     color: #3a2a08;
     letter-spacing: 0.2em;
@@ -707,6 +760,7 @@
 </style>
 </head>
 <body>
+<button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">☀️</button>
 <div id="app">
   <div class="header">
     <div class="header-inner">
@@ -1190,7 +1244,7 @@ function showLoadingOverlay(show) {
   if (!el) {
     el = document.createElement('div');
     el.id = 'loading-overlay';
-    el.style.cssText = 'position:fixed;inset:0;background:rgba(18,16,10,0.85);display:flex;align-items:center;justify-content:center;z-index:1000;font-family:Special Elite,monospace;color:#8a6c2a;font-size:16px;letter-spacing:0.15em;';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(18,16,10,0.85);display:flex;align-items:center;justify-content:center;z-index:1000;font-family:Inter,sans-serif;font-weight:300;letter-spacing:0.2em;color:#8a6c2a;font-size:16px;letter-spacing:0.15em;';
     el.textContent = 'Loading scores...';
     document.body.appendChild(el);
   }
@@ -1207,6 +1261,7 @@ async function showMovieModal(movieId) {
   // Create overlay immediately with loading state
   const overlay = document.createElement('div');
   overlay.className = 'movie-modal-overlay';
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
   overlay.innerHTML = `<div class="movie-modal"><div class="modal-loading">Loading...</div></div>`;
   document.body.appendChild(overlay);
@@ -1253,7 +1308,7 @@ async function showMovieModal(movieId) {
   } catch(e) {
     overlay.querySelector('.movie-modal').innerHTML = `
       <div class="movie-modal-body">
-        <div class="movie-modal-title" style="font-family:'Playfair Display',serif;color:#f5e6c0;margin-bottom:8px">${m.title}</div>
+        <div class="movie-modal-title" style="font-family:'Inter',sans-serif;font-weight:600;color:#f5e6c0;margin-bottom:8px">${m.title}</div>
         <div class="modal-loading" style="padding:1rem 0">Details not available yet for this film.</div>
       </div>
       <button class="modal-close-x" onclick="this.closest('.movie-modal-overlay').remove()">✕</button>
@@ -1263,6 +1318,15 @@ async function showMovieModal(movieId) {
   }
 }
 
+window._soundMuted = localStorage.getItem('cinerank_muted') === '1';
+function toggleSound() {
+  window._soundMuted = !window._soundMuted;
+  localStorage.setItem('cinerank_muted', window._soundMuted ? '1' : '0');
+  document.querySelectorAll('.sound-toggle-btn').forEach(b => {
+    b.textContent = window._soundMuted ? '🔇' : '🔊';
+    b.title = window._soundMuted ? 'Sound off (click to enable)' : 'Sound on (click to mute)';
+  });
+}
 function playPopcornSound() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1404,10 +1468,22 @@ function spawnPopcorn(x, y) {
   }
 }
 
+let lastVoteSnapshot = null;
+
 function vote(winnerId) {
   const p=getPData(); if (!p||!currentPair) return;
   const player = getPlayer();
   const loserId=currentPair.find(m=>m.id!==winnerId).id;
+  // Save snapshot for undo
+  lastVoteSnapshot = {
+    player, winnerId, loserId,
+    winnerElo: p.ratings[winnerId].elo, loserElo: p.ratings[loserId].elo,
+    winnerWins: p.ratings[winnerId].wins, loserLosses: p.ratings[loserId].losses,
+    winnerMatches: p.ratings[winnerId].matches, loserMatches: p.ratings[loserId].matches,
+    matchCount: p.matchCount,
+    playedPairs: [...(p.playedPairs||[])],
+    h2hKey: pairKey(winnerId,loserId)
+  };
   const cards = document.querySelectorAll('.movie-card');
   let winnerCenter = { x: window.innerWidth/2, y: window.innerHeight/2 };
   cards.forEach(c => {
@@ -1422,6 +1498,7 @@ function vote(winnerId) {
   });
   spawnPopcorn(winnerCenter.x, winnerCenter.y);
   playPopcornSound();
+  if (navigator.vibrate && !window._soundMuted) navigator.vibrate(28);
   setTimeout(async () => {
     applyEloLocal(p.ratings, winnerId, loserId);
     p.matchCount++;
@@ -1457,6 +1534,23 @@ function vote(winnerId) {
 }
 
 function skipMatchup() { currentStreak = 0; renderMatchup(); }
+
+function undoLastVote() {
+  if (!lastVoteSnapshot) return;
+  const {player,winnerId,loserId,winnerElo,loserElo,winnerWins,loserLosses,winnerMatches,loserMatches,matchCount,playedPairs,h2hKey} = lastVoteSnapshot;
+  const p = getPData(); if(!p) return;
+  p.ratings[winnerId].elo = winnerElo; p.ratings[winnerId].wins = winnerWins; p.ratings[winnerId].matches = winnerMatches;
+  p.ratings[loserId].elo = loserElo; p.ratings[loserId].losses = loserLosses; p.ratings[loserId].matches = loserMatches;
+  p.matchCount = matchCount;
+  p.playedPairs = playedPairs;
+  if(p.h2hHistory) delete p.h2hHistory[h2hKey];
+  try { localStorage.setItem('playedPairs_'+player, JSON.stringify(p.playedPairs)); } catch(e) {}
+  rebuildGlobal();
+  lastVoteSnapshot = null;
+  currentStreak = Math.max(0, currentStreak - 1);
+  renderMatchup();
+  showToast('↩ Vote undone');
+}
 
 function markUnseen(id) {
   const p=getPData(); if (!p) return;
@@ -2007,15 +2101,21 @@ function renderMatchup() {
     const key = pairKey(a.id, b.id);
     const prevWinner = p.h2hHistory && p.h2hHistory[key];
     const h2hHtml = prevWinner ? `<div class="h2h-badge">Last time: ${MOVIES.find(m=>m.id===prevWinner)?.title || 'unknown'} won this matchup</div>` : '';
+    const undoBtnHtml = lastVoteSnapshot ? `<button onclick="undoLastVote()" style="background:linear-gradient(135deg,#1e1a10,#2a2410);border:1px solid #4a3e18;color:#9a8440;padding:9px 18px;border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;letter-spacing:0.03em;box-shadow:0 2px 8px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,220,100,0.08);transition:all 0.15s ease;display:inline-flex;align-items:center;gap:6px" onmouseover="this.style.borderColor='#6a5a28';this.style.color='#c8a040';this.style.transform='translateY(-1px)'" onmouseout="this.style.borderColor='#4a3e18';this.style.color='#9a8440';this.style.transform=''">↩ Undo last vote</button>` : '';
     html+=`<div class="matchup-wrap">${hint}${streakHtml}<div class="matchup-section">${cardHTML(a,p)}<div class="vs-label">vs</div>${cardHTML(b,p)}</div>${h2hHtml}
-    ${p.matchCount < 50 ? '<button class="skip-btn" onclick="skipMatchup()">Skip this matchup</button>' : ''}</div>`;
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;padding:0 4px">
+      <div>${undoBtnHtml}</div>
+      <div>${p.matchCount < 50 ? '<button class="skip-btn" onclick="skipMatchup()">Skip this matchup</button>' : ''}</div>
+      <div style="width:120px"></div>
+    </div></div>`;
   }
   inner.innerHTML=html;
+  setTimeout(initSwipeVote, 0);
 }
 
 function cardHTML(m,p) {
   const r=p.ratings[m.id];
-  return `<div class="movie-card">
+  return `<div class="movie-card" data-movie-id="${m.id}">
     <img class="movie-poster" src="${m.img}" alt="${m.title}" onclick="showMovieModal('${m.id}')" style="cursor:pointer"/>
     <div class="movie-title" onclick="showMovieModal('${m.id}')" style="cursor:pointer">${m.title}</div>
     <div class="movie-elo-badge">ELO ${r.elo}</div>
@@ -2024,6 +2124,97 @@ function cardHTML(m,p) {
       <button class="btn-unseen" onclick="markUnseen('${m.id}')">Haven't seen this</button>
     </div>
   </div>`;
+}
+
+// ── Swipe-to-vote (Tinder-style) ──
+function initSwipeVote() {
+  const wrap = document.querySelector('.matchup-section');
+  if (!wrap || wrap.dataset.swipeInit) return;
+  wrap.dataset.swipeInit = '1';
+  const cards = wrap.querySelectorAll('.movie-card');
+  if (cards.length < 2) return;
+  const cardA = cards[0]; // left
+  const cardB = cards[1]; // right
+  let dragging = null, startX = 0, startY = 0, curX = 0;
+  const THRESHOLD = 80;
+
+  function applyDrag(card, dx) {
+    const rot = dx * 0.08;
+    card.style.transition = 'none';
+    card.style.transform = `translateX(${dx}px) rotate(${rot}deg)`;
+    // Choice overlay
+    const ov = card.querySelector('.swipe-overlay');
+    if (!ov) return;
+    const pct = Math.min(1, Math.abs(dx) / THRESHOLD);
+    ov.style.opacity = pct;
+    ov.style.color = dx > 0 ? '#4ade80' : '#f87171'; // right=pick, left=reject
+    ov.textContent = dx > 0 ? '✓ PICK' : '✗ SKIP';
+  }
+
+  function resetCard(card) {
+    card.style.transition = 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1)';
+    card.style.transform = '';
+    const ov = card.querySelector('.swipe-overlay');
+    if (ov) { ov.style.opacity = 0; }
+  }
+
+  function commitSwipe(card, winnerId) {
+    const dx = winnerId ? 300 : -300;
+    card.style.transition = 'transform 0.28s ease-in, opacity 0.28s ease-in';
+    card.style.transform = `translateX(${dx}px) rotate(${dx * 0.08}deg)`;
+    card.style.opacity = '0';
+    if (navigator.vibrate) navigator.vibrate(30);
+    setTimeout(() => { if (winnerId) vote(winnerId); }, 200);
+  }
+
+  function onStart(e) {
+    const touch = e.touches ? e.touches[0] : e;
+    startX = touch.clientX; startY = touch.clientY; curX = 0;
+    dragging = e.currentTarget;
+    dragging.style.zIndex = 10;
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const touch = e.touches ? e.touches[0] : e;
+    const dx = touch.clientX - startX;
+    const dy = touch.clientY - startY;
+    if (Math.abs(dy) > Math.abs(dx) * 1.5) { dragging = null; return; } // vertical scroll
+    e.preventDefault();
+    curX = dx;
+    applyDrag(dragging, dx);
+  }
+  function onEnd() {
+    if (!dragging) return;
+    const card = dragging; dragging = null;
+    card.style.zIndex = '';
+    if (Math.abs(curX) > THRESHOLD) {
+      // Swiped far enough — pick if right swipe
+      const winnerId = curX > 0 ? card.dataset.movieId : null;
+      if (winnerId) {
+        commitSwipe(card, winnerId);
+      } else {
+        // Left swipe = skip
+        commitSwipe(card, null);
+        setTimeout(() => skipMatchup(), 200);
+      }
+    } else {
+      resetCard(card);
+    }
+    curX = 0;
+  }
+
+  [cardA, cardB].forEach(card => {
+    // Inject swipe overlay
+    const ov = document.createElement('div');
+    ov.className = 'swipe-overlay';
+    ov.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:22px;font-weight:900;letter-spacing:0.05em;opacity:0;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,0.5);z-index:5';
+    card.style.position = 'relative';
+    card.style.overflow = 'visible';
+    card.appendChild(ov);
+    card.addEventListener('touchstart', onStart, {passive:true});
+    card.addEventListener('touchmove', onMove, {passive:false});
+    card.addEventListener('touchend', onEnd);
+  });
 }
 
 async function renderLeaderboard() {
@@ -2060,7 +2251,7 @@ async function renderLeaderboard() {
         state.globalRatings[m.id] = freshGlobal[m.id];
       });
     }
-  } catch(e) { console.error('Leaderboard fetch error:', e); }
+  } catch(e) { console.error('Leaderboard fetch error:', e); document.getElementById('lb-body').innerHTML='<tr><td colspan="7" style="text-align:center;color:#888;padding:2rem;font-size:13px">⚠️ Couldn\'t load scores — check your connection and refresh.</td></tr>'; }
 
   const gr = filterPlayer && state.players[filterPlayer] ? state.players[filterPlayer].ratings : state.globalRatings;
   const sorted=[...MOVIES].filter(m => gr[m.id].matches > 0 || !filterPlayer).sort((a,b)=>{
@@ -2383,7 +2574,11 @@ function setSeenStatus(movieId, seen, btnEl) {
   setTimeout(() => renderSetup(), seen ? 380 : 420);
 }
 
+const _scrollPos={};
 function showTab(tabId,btn) {
+  const curTab=currentTab;
+  const curEl=curTab?document.getElementById('tab-'+curTab):null;
+  if(curEl) _scrollPos[curTab]=curEl.scrollTop;
   currentTab=tabId;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   if (btn) btn.classList.add('active');
@@ -2408,6 +2603,8 @@ function showTab(tabId,btn) {
     }
   });
   if (tabId==='vote') renderMatchup();
+  const newEl=document.getElementById('tab-'+tabId);
+  if(newEl){newEl.classList.remove('tab-content-enter');void newEl.offsetWidth;newEl.classList.add('tab-content-enter');setTimeout(()=>newEl.scrollTop=_scrollPos[tabId]||0,0);}
   if (tabId==='leaderboard') renderLeaderboard();
   if (tabId==='arcade') renderArcade();
   if (tabId==='mymovies') {
@@ -3040,7 +3237,7 @@ function runnerLoop(timestamp) {
         ctx.fillStyle = '#3a1a08';
         ctx.fillRect(px - pW/2, py - pH, pW, pH);
         ctx.fillStyle = '#c8a040';
-        ctx.font = `${Math.max(8, 14*scale)}px Arial`;
+        ctx.font = `${Math.max(8, 14*scale)}px Inter`;
         ctx.textAlign = 'center';
         const words = ob.title.split(' ');
         ctx.fillText(words[0], px, py - pH/2);
@@ -3110,7 +3307,7 @@ function runnerLoop(timestamp) {
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
   ctx.fillRect(0,0,W,38);
   ctx.fillStyle = '#c8a040';
-  ctx.font = 'bold 14px Arial';
+  ctx.font = 'bold 14px Inter';
   ctx.textAlign = 'left';
   ctx.fillText(`${s.score}m`, 12, 24);
   ctx.textAlign = 'center';
@@ -3136,7 +3333,7 @@ function runnerLoop(timestamp) {
     ctx.save();
     ctx.shadowColor = 'rgba(74,222,128,0.8)';
     ctx.shadowBlur = 10 + Math.sin(s.frame * 0.15) * 5;
-    ctx.font = `${size}px serif`;
+    ctx.font = `${size}px Inter`;
     ctx.textAlign = 'center';
     ctx.fillText('💚', posX, posY - 20);
     ctx.restore();
@@ -3318,7 +3515,7 @@ function setupCatchCanvas() {
   ctx.fillStyle = '#0c0c0e';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#c8a040';
-  ctx.font = 'bold 20px Arial';
+  ctx.font = 'bold 20px Inter';
   ctx.textAlign = 'center';
   ctx.fillText('🎪 Poster Catch', canvas.width/2, canvas.height/2);
 
@@ -3461,11 +3658,11 @@ function catchLoop(timestamp) {
   ctx.fillStyle = 'rgba(200,160,64,0.15)';
   ctx.fillRect(0, 0, W, 50);
   ctx.fillStyle = '#c8a040';
-  ctx.font = 'bold 13px Arial';
+  ctx.font = 'bold 13px Inter';
   ctx.textAlign = 'center';
   ctx.fillText(`Catch: ${s.prompt.label}`, W/2, 22);
   ctx.fillStyle = '#555';
-  ctx.font = '11px Arial';
+  ctx.font = '11px Inter';
   ctx.fillText('Non-matching posters pass harmlessly through', W/2, 40);
 
   // Draw and update posters
@@ -3531,7 +3728,7 @@ function catchLoop(timestamp) {
     ctx.save();
     ctx.shadowColor = 'rgba(74,222,128,0.9)';
     ctx.shadowBlur = 12;
-    ctx.font = `${Math.round(28 * pulse)}px serif`;
+    ctx.font = `${Math.round(28 * pulse)}px Inter`;
     ctx.textAlign = 'center';
     ctx.fillText('💚', h.x, h.y);
     ctx.restore();
@@ -3553,7 +3750,7 @@ function catchLoop(timestamp) {
   ctx.fillStyle = '#8a6820';
   ctx.fillRect(s.basketX - bW/2, H - 50 + bH, bW, 8);
   ctx.fillStyle = '#f0f0f0';
-  ctx.font = '20px serif';
+  ctx.font = '20px Inter';
   ctx.textAlign = 'center';
   ctx.fillText('🧺', s.basketX, H - 20);
 
@@ -3561,7 +3758,7 @@ function catchLoop(timestamp) {
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.fillRect(0, H - 16, W, 16);
   ctx.fillStyle = '#c8a040';
-  ctx.font = 'bold 11px Arial';
+  ctx.font = 'bold 11px Inter';
   ctx.textAlign = 'left';
   ctx.fillText(`Score: ${s.score}`, 8, H - 4);
   ctx.textAlign = 'right';
@@ -3712,7 +3909,7 @@ function rofLoop(timestamp) {
     item.y += item.vy * s.speed * dt;
     if (item.x < -60 || item.x > W+60 || item.y < -60 || item.y > H+60) return false;
 
-    ctx.font = '30px serif';
+    ctx.font = '30px Inter';
     ctx.textAlign = 'center';
     ctx.fillText(item.isPopcorn ? '🍿' : '🍅', item.x, item.y + 10);
 
@@ -3735,7 +3932,7 @@ function rofLoop(timestamp) {
   });
 
   // Draw basket at player position
-  ctx.font = '44px serif';
+  ctx.font = '44px Inter';
   ctx.textAlign = 'center';
   ctx.fillText('🧺', s.playerX, s.playerY + 14);
 
@@ -3743,7 +3940,7 @@ function rofLoop(timestamp) {
   ctx.fillStyle = 'rgba(0,0,0,0.6)';
   ctx.fillRect(0, 0, W, 38);
   ctx.fillStyle = '#c8a040';
-  ctx.font = 'bold 14px Arial';
+  ctx.font = 'bold 14px Inter';
   ctx.textAlign = 'left';
   ctx.fillText(`🍿 ${s.score}`, 12, 24);
   ctx.textAlign = 'right';
@@ -3852,17 +4049,17 @@ function snakeStart() {
     // Countdown number
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.font = 'bold 80px Arial';
+    ctx.font = 'bold 80px Inter';
     ctx.textAlign = 'center';
     ctx.fillStyle = '#c8a040';
     ctx.fillText(count > 0 ? count : 'GO!', canvas.width/2, canvas.height/2 + 28);
-    ctx.font = '16px Arial';
+    ctx.font = '16px Inter';
     ctx.fillStyle = '#777';
     ctx.fillText('Get ready...', canvas.width/2, canvas.height/2 - 50);
     // Next target info
     if (snakeState.food) {
       const title = snakeState.food.movie.title.length > 24 ? snakeState.food.movie.title.slice(0,23)+'…' : snakeState.food.movie.title;
-      ctx.fillStyle = '#c8a040'; ctx.font = 'bold 13px Arial';
+      ctx.fillStyle = '#c8a040'; ctx.font = 'bold 13px Inter';
       ctx.fillText('First target: ' + title, canvas.width/2, canvas.height/2 + 80);
     }
   }
@@ -3973,7 +4170,7 @@ function snakeLoop() {
     ctx.fillStyle = `rgba(200,160,64,${0.3 + t * 0.7})`;
     ctx.fillRect(seg.x*CELL+1, 42+seg.y*CELL+1, CELL-2, CELL-2);
     if (i === 0) {
-      ctx.font = `${CELL-4}px serif`;
+      ctx.font = `${CELL-4}px Inter`;
       ctx.textAlign = 'center';
       ctx.fillText('🐍', seg.x*CELL + CELL/2, 42+seg.y*CELL + CELL - 2);
     }
@@ -3981,7 +4178,7 @@ function snakeLoop() {
 
   // HUD drawn on top
   ctx.fillStyle = '#c8a040';
-  ctx.font = 'bold 13px Arial';
+  ctx.font = 'bold 13px Inter';
   ctx.textAlign = 'left';
   ctx.fillText(`🎬 ${s.score} eaten`, 12, 26);
   if (s.food) {
@@ -4326,7 +4523,7 @@ function startQuickDraw() {
 
 async function renderHallOfFame() {
   const el = document.getElementById('hall-content');
-  el.innerHTML = '<div style="text-align:center;padding:3rem;color:#8a6a20;font-family:Cinzel,serif;letter-spacing:0.2em;font-size:12px">ENTERING THE HALL...</div>';
+  el.innerHTML = '<div style="text-align:center;padding:3rem;color:#8a6a20;font-family:Inter,sans-serif"><div style="font-size:32px;margin-bottom:12px">🏛️</div><div style="font-size:16px;font-weight:700;margin-bottom:8px">Building the museum...</div><div style="font-size:12px;opacity:0.6">Curating your collection</div></div>';
 
   const player = getPlayer();
   // Include all movies with any data, ranked by ELO
@@ -4356,11 +4553,11 @@ async function renderHallOfFame() {
           <div style="width:2px;height:16px;background:rgba(200,168,64,0.8);position:absolute;left:7px;top:0"></div>
           <div style="width:16px;height:2px;background:rgba(200,168,64,0.8);position:absolute;top:7px;left:0"></div>
         </div>
-        <div id="museum-label" style="position:absolute;bottom:72px;left:50%;transform:translateX(-50%);background:rgba(242,234,212,0.97);border:1px solid rgba(175,135,38,0.7);border-radius:3px;padding:10px 20px;font-family:Cinzel,serif;font-size:12px;color:#2a1800;text-align:center;display:none;max-width:360px;line-height:1.7;pointer-events:all;cursor:pointer"></div>
-        <div id="museum-room" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);font-family:Cinzel,serif;font-size:11px;color:rgba(200,168,64,0.9);letter-spacing:0.25em;white-space:nowrap"></div>
-        <div id="museum-collect-toast" style="position:absolute;top:50px;left:50%;transform:translateX(-50%);background:rgba(200,168,64,0.95);color:#0a0600;font-family:Cinzel,serif;font-size:11px;font-weight:700;padding:8px 20px;border-radius:3px;display:none;white-space:nowrap"></div>
-        <div id="museum-collection" style="position:absolute;top:12px;right:14px;font-family:Cinzel,serif;font-size:10px;color:rgba(200,168,64,0.7)"></div>
-        <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(200,168,64,0.4);letter-spacing:0.1em;font-family:Cinzel,serif;white-space:nowrap">ARROWS/DRAG · WASD · CLICK POSTER TO COLLECT</div>
+        <div id="museum-label" style="position:absolute;bottom:72px;left:50%;transform:translateX(-50%);background:rgba(242,234,212,0.97);border:1px solid rgba(175,135,38,0.7);border-radius:3px;padding:10px 20px;font-family:Inter,sans-serif;font-size:12px;color:#2a1800;text-align:center;display:none;max-width:360px;line-height:1.7;pointer-events:all;cursor:pointer"></div>
+        <div id="museum-room" style="position:absolute;top:14px;left:50%;transform:translateX(-50%);font-family:Inter,sans-serif;font-size:11px;color:rgba(200,168,64,0.9);letter-spacing:0.25em;white-space:nowrap"></div>
+        <div id="museum-collect-toast" style="position:absolute;top:50px;left:50%;transform:translateX(-50%);background:rgba(200,168,64,0.95);color:#0a0600;font-family:Inter,sans-serif;font-size:11px;font-weight:700;padding:8px 20px;border-radius:3px;display:none;white-space:nowrap"></div>
+        <div id="museum-collection" style="position:absolute;top:12px;right:14px;font-family:Inter,sans-serif;font-size:10px;color:rgba(200,168,64,0.7)"></div>
+        <div style="position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(200,168,64,0.4);letter-spacing:0.1em;font-family:Inter,sans-serif;white-space:nowrap">ARROWS/DRAG · WASD · CLICK POSTER TO COLLECT</div>
       </div>
       <div id="mjoy-wrap" style="position:absolute;bottom:44px;left:20px;z-index:10">
         <div id="mjoy-pad" style="width:72px;height:72px;border-radius:50%;background:rgba(200,168,64,0.1);border:1.5px solid rgba(200,168,64,0.25);position:relative;touch-action:none">
@@ -4830,13 +5027,13 @@ async function renderHallOfFame() {
           // Width: use narrower of top/bottom of caption to guarantee text fits
           const capW3=Math.max(20,Math.min(Math.abs(ibr.sx-ibl.sx),Math.abs(capTRsx-capTLsx)));
           ctx.textAlign='center';
-          let szT=Math.min(12,capW3*0.1);ctx.font=`bold ${szT}px Cinzel,serif`;
-          while(szT>5&&ctx.measureText(p.title||'').width>capW3*0.88){szT-=0.5;ctx.font=`bold ${szT}px Cinzel,serif`;}
+          let szT=Math.min(12,capW3*0.1);ctx.font = `bold ${szT}px Inter`;
+          while(szT>5&&ctx.measureText(p.title||'').width>capW3*0.88){szT-=0.5;ctx.font = `bold ${szT}px Inter`;}
           ctx.fillStyle=`rgba(255,238,145,${alpha})`;
           ctx.fillText(p.title||'',capCX3,capCY3-szT*0.2);
-          let szS=Math.min(9,capW3*0.068);ctx.font=`${szS}px Cinzel,serif`;
+          let szS=Math.min(9,capW3*0.068);ctx.font = `${szS}px Inter`;
           const sub=p.sub||'';
-          while(szS>4&&ctx.measureText(sub).width>capW3*0.88){szS-=0.5;ctx.font=`${szS}px Cinzel,serif`;}
+          while(szS>4&&ctx.measureText(sub).width>capW3*0.88){szS-=0.5;ctx.font = `${szS}px Inter`;}
           ctx.fillStyle=`rgba(210,185,88,${alpha*0.88})`;
           ctx.fillText(sub,capCX3,capCY3+szS*0.9);
         } else {
@@ -4845,18 +5042,18 @@ async function renderHallOfFame() {
           const cx2=minX+pw2*0.5,cy2=minY+ph2*0.5;
           // Emoji — 26% of height
           const eSz=Math.min(ph2*0.26,pw2*0.5,48);
-          ctx.font=`${eSz}px serif`;ctx.fillStyle=`rgba(50,28,2,${alpha})`;
+          ctx.font = `${eSz}px Inter`;ctx.fillStyle=`rgba(50,28,2,${alpha})`;
           ctx.fillText(p.emoji||'🎬',cx2,minY+ph2*0.32);
           // Title — fit to width
-          let tSz=Math.min(ph2*0.13,pw2*0.16,18);ctx.font=`bold ${tSz}px Cinzel,serif`;
+          let tSz=Math.min(ph2*0.13,pw2*0.16,18);ctx.font = `bold ${tSz}px Inter`;
           const titleStr=p.title||'';
-          while(tSz>6&&ctx.measureText(titleStr).width>pw2*0.86){tSz-=0.5;ctx.font=`bold ${tSz}px Cinzel,serif`;}
+          while(tSz>6&&ctx.measureText(titleStr).width>pw2*0.86){tSz-=0.5;ctx.font = `bold ${tSz}px Inter`;}
           ctx.fillStyle=p.playerColor||`rgba(35,16,0,${alpha})`;
           ctx.fillText(titleStr,cx2,minY+ph2*0.54);
           // Sub — fit to width
-          let sSz=Math.min(ph2*0.08,pw2*0.1,11);ctx.font=`${sSz}px Cinzel,serif`;
+          let sSz=Math.min(ph2*0.08,pw2*0.1,11);ctx.font = `${sSz}px Inter`;
           const subStr=p.sub||'';
-          while(sSz>5&&ctx.measureText(subStr).width>pw2*0.86){sSz-=0.5;ctx.font=`${sSz}px Cinzel,serif`;}
+          while(sSz>5&&ctx.measureText(subStr).width>pw2*0.86){sSz-=0.5;ctx.font = `${sSz}px Inter`;}
           ctx.fillStyle=`rgba(85,52,8,${alpha*0.9})`;
           ctx.fillText(subStr,cx2,minY+ph2*0.7);
         }
@@ -4865,7 +5062,7 @@ async function renderHallOfFame() {
       // Rank medal in top corner of frame (world-space position)
       if(p.rankNum&&p.rankNum<=3&&innerF){
         const[otl]=innerF;
-        ctx.font=`${Math.max(10,14*bv)}px serif`;ctx.textAlign='left';
+        ctx.font = `${Math.max(10,14*bv)}px Inter`;ctx.textAlign='left';
         ctx.fillStyle=`rgba(255,215,55,${alpha})`;
         ctx.fillText(['🥇','🥈','🥉'][p.rankNum-1],otl.sx+3,otl.sy+Math.max(13,16*bv));
       }
@@ -4937,7 +5134,7 @@ async function renderHallOfFame() {
     if(roomName){
       const rfs=Math.max(14,Math.min(22,W*0.028));
       ctx.save();
-      ctx.font=`bold ${rfs}px Cinzel,serif`;
+      ctx.font = `bold ${rfs}px Inter`;
       const rtw=ctx.measureText(roomName).width;
       // Background pill
       ctx.fillStyle='rgba(12,7,0,0.62)';
@@ -4965,13 +5162,90 @@ async function renderHallOfFame() {
         lbl.onclick=()=>collectPainting(nearestPainting);
       }else{lbl.style.display='none';lbl.onclick=null;}
     }
-    const ce=document.getElementById('museum-collection');if(ce)ce.textContent=`✦ ${collected.size} collected`;
+    const ce=document.getElementById('museum-collection');if(ce){const prev=parseInt(ce.dataset.prev||0);if(collected.size>prev){ce.style.transform='scale(1.25)';ce.style.color='#f0c040';setTimeout(()=>{ce.style.transition='transform 0.3s ease,color 0.3s ease';ce.style.transform='';ce.style.color='';},300);}ce.dataset.prev=collected.size;ce.textContent=`✦ ${collected.size} collected`;}
     af=requestAnimationFrame(loop);
   }
   loop();
+  setTimeout(showHallControlsHint, 800);
 
   const obs=new MutationObserver(()=>{if(!document.getElementById('museum-canvas')){running=false;document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);obs.disconnect();}});
   obs.observe(el,{childList:true});
+}
+
+// ── Onboarding ──────────────────────────────────────────────────────────────
+const ONBOARD_STEPS = [
+  { icon:'🎬', title:'Welcome to CineRank!', body:'You and your friends vote head-to-head on upcoming movies. Every matchup updates ELO ratings — like chess, but for cinema.' },
+  { icon:'⚔️', title:'How voting works', body:'Two posters appear. Tap the one you\'d rather watch — or swipe right to pick, left to skip. Your rankings update instantly.' },
+  { icon:'🏛️', title:'The Hall of Fame', body:'Walk through a 3D museum displaying your group\'s rankings. The Hall updates as you vote — your #1 all-time sits at the very end.' },
+];
+function showOnboarding() {
+  if (localStorage.getItem('cinerank_onboarded')) return;
+  let step = 0;
+  function render() {
+    const s = ONBOARD_STEPS[step];
+    const dots = ONBOARD_STEPS.map((_,i) => `<div class="onboard-dot ${i===step?'active':''}"></div>`).join('');
+    const isLast = step === ONBOARD_STEPS.length - 1;
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="onboard-overlay" id="onboard-overlay" onclick="if(event.target===this)closeOnboarding()">
+        <div class="onboard-card">
+          <div class="onboard-icon">${s.icon}</div>
+          <div class="onboard-title">${s.title}</div>
+          <div class="onboard-body">${s.body}</div>
+          <div class="onboard-dots">${dots}</div>
+          <button class="onboard-btn" onclick="${isLast?'closeOnboarding()':'nextOnboardStep()'}">
+            ${isLast ? "Let's go! 🎬" : 'Next →'}
+          </button>
+        </div>
+      </div>`);
+  }
+  window.nextOnboardStep = function() {
+    step++; document.getElementById('onboard-overlay')?.remove(); render();
+  };
+  window.closeOnboarding = function() {
+    document.getElementById('onboard-overlay')?.remove();
+    localStorage.setItem('cinerank_onboarded','1');
+  };
+  render();
+}
+setTimeout(showOnboarding, 800);
+
+function showHallControlsHint() {
+  if (localStorage.getItem('cinerank_hall_hinted')) return;
+  const isMobile = window.innerWidth < 600;
+  const controls = isMobile
+    ? '👆 Drag left/right to look · 🕹️ Joystick to move · Tap poster to collect'
+    : '← → Turn · W/S Move · A/D Strafe · Click poster to collect';
+  const el = document.createElement('div');
+  el.id = 'hall-hint';
+  el.style.cssText = 'position:absolute;bottom:52px;left:50%;transform:translateX(-50%);background:rgba(10,6,0,0.88);border:1px solid #3a3010;border-radius:10px;padding:10px 20px;font-size:13px;color:#c8a040;letter-spacing:0.04em;text-align:center;pointer-events:none;z-index:50;white-space:nowrap;animation:fadeIn 0.4s ease';
+  el.textContent = controls;
+  document.getElementById('hall-content')?.appendChild(el);
+  setTimeout(() => { el.style.transition='opacity 0.8s'; el.style.opacity='0'; setTimeout(()=>el.remove(),800); }, 3500);
+  localStorage.setItem('cinerank_hall_hinted','1');
+}
+
+function countUp(el, target, duration=600) {
+  const start = parseInt(el.textContent.replace(/[^0-9]/g,'')) || 0;
+  const startTime = performance.now();
+  function step(now) {
+    const p = Math.min(1, (now - startTime) / duration);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(start + (target - start) * ease);
+    if (p < 1) requestAnimationFrame(step);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(step);
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('cinerank_theme', isLight ? 'light' : 'dark');
+  document.querySelector('.theme-toggle').textContent = isLight ? '🌙' : '☀️';
+}
+// Restore saved theme
+if (localStorage.getItem('cinerank_theme') === 'light') {
+  document.body.classList.add('light-mode');
+  const tb = document.querySelector('.theme-toggle'); if(tb) tb.textContent='🌙';
 }
 
 loadFromDB();
